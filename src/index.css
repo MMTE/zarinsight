@@ -1,0 +1,308 @@
+/* --- MANAGED FONT IMPORTS START (do not edit manually) --- */
+/* INTERNAL USE NAME: Heading */
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* --- MANAGED FONT IMPORTS END --- */
+
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import './_designSystem/ds-a4ebf67b-99cb-4540-85a4-178761bbf89e/index.css';
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+:root {
+  --gray-50: #FCFCFD;
+  --gray-100: #F9F9FB;
+  --gray-200: #F1F1F3;
+  --gray-300: #E5E5E8;
+  --gray-400: #D4D4D7;
+  --gray-500: #BDBDC1;
+  --gray-600: #A0A0A4;
+  --gray-700: #7C7C7F;
+  --gray-800: #545457;
+  --gray-900: #2C2C2D;
+  --gray-950: #19191A;
+  --red-50: #FFEEEE;
+  --red-100: #FFDBDB;
+  --red-200: #FFB4B4;
+  --red-300: #FF8A8A;
+  --red-400: #FF5F5F;
+  --red-500: #FF3434;
+  --red-600: #F20C0C;
+  --red-700: #BD0404;
+  --red-800: #830000;
+  --red-900: #480000;
+  --red-950: #240000;
+  --orange-50: #FFFBEE;
+  --orange-100: #FFF6DB;
+  --orange-200: #FFE4B4;
+  --orange-300: #FFCF8A;
+  --orange-400: #FFB75F;
+  --orange-500: #FF9C34;
+  --orange-600: #F27F0C;
+  --orange-700: #BD6004;
+  --orange-800: #834100;
+  --orange-900: #482400;
+  --orange-950: #241200;
+  --gold-50: #FFF7DC;
+  --gold-100: #FFF3B7;
+  --gold-200: #FFE97E;
+  --gold-300: #FFDF43;
+  --gold-400: #FFD60A;
+  --gold-500: #DDB104;
+  --gold-600: #B68A00;
+  --gold-700: #8A6400;
+  --gold-800: #5C3F00;
+  --gold-900: #2E1E00;
+  --gold-950: #251700;
+  --crowd-50: #E2FDE7;
+  --crowd-100: #C6FCCF;
+  --crowd-200: #9AF4A9;
+  --crowd-300: #6FE983;
+  --crowd-400: #45D95D;
+  --crowd-500: #20C93A;
+  --crowd-600: #01A61C;
+  --crowd-700: #008015;
+  --crowd-800: #00550E;
+  --crowd-900: #002A07;
+  --crowd-950: #001503;
+  --green-50: #E2FDF2;
+  --green-100: #C6FCE5;
+  --green-200: #9AF4CE;
+  --green-300: #6EE9B6;
+  --green-400: #44D99B;
+  --green-500: #1FC97F;
+  --green-600: #00A661;
+  --green-700: #00804B;
+  --green-800: #005532;
+  --green-900: #002A18;
+  --green-950: #00150C;
+  --express-50: #E0FBF4;
+  --express-100: #C2F7EA;
+  --express-200: #95EBD6;
+  --express-300: #68DABD;
+  --express-400: #3ECFA1;
+  --express-500: #1BAC82;
+  --express-600: #018161;
+  --express-700: #006048;
+  --express-800: #003C2D;
+  --express-900: #001913;
+  --express-950: #000D0A;
+  --lend-50: #F2FDFC;
+  --lend-100: #E5FAF9;
+  --lend-200: #CAF5F4;
+  --lend-300: #AFEEEC;
+  --lend-400: #92E4E1;
+  --lend-500: #75D4D1;
+  --lend-600: #57BDBA;
+  --lend-700: #379D9A;
+  --lend-800: #1B716E;
+  --lend-900: #073B39;
+  --lend-950: #021E1D;
+  --blue-50: #ECF6FF;
+  --blue-100: #D9ECFF;
+  --blue-200: #B3D6FF;
+  --blue-300: #8BBDFF;
+  --blue-400: #63A3F9;
+  --blue-500: #3C85E9;
+  --blue-600: #1967D2;
+  --blue-700: #0C4CA3;
+  --blue-800: #043170;
+  --blue-900: #00193B;
+  --blue-950: #000C1E;
+  --neo-50: #F6FBFF;
+  --neo-100: #ECF5FF;
+  --neo-200: #CDDFFF;
+  --neo-300: #ABC5FF;
+  --neo-400: #87A9FF;
+  --neo-500: #6089FF;
+  --neo-600: #3B68FF;
+  --neo-700: #2147C7;
+  --neo-800: #0E2B8B;
+  --neo-900: #03144D;
+  --neo-950: #010927;
+  --pal-50: #EFF3FF;
+  --pal-100: #DDE6FF;
+  --pal-200: #B6C7FF;
+  --pal-300: #8CA9FF;
+  --pal-400: #6A8AFF;
+  --pal-500: #3458FF;
+  --pal-600: #0A33FF;
+  --pal-700: #0223C7;
+  --pal-800: #00178B;
+  --pal-900: #000D4D;
+  --pal-950: #000627;
+  --plus-50: #EDF0FF;
+  --plus-100: #DADAFF;
+  --plus-200: #BBB1FF;
+  --plus-300: #A386FF;
+  --plus-400: #9158FF;
+  --plus-500: #862BFF;
+  --plus-600: #8000FF;
+  --plus-700: #5F00C7;
+  --plus-800: #3F008B;
+  --plus-900: #21004D;
+  --plus-950: #0F0027;
+  --academy-50: #FFEEF8;
+  --academy-100: #FFDCF0;
+  --academy-200: #FFB6DA;
+  --academy-300: #FF8FC1;
+  --academy-400: #FF6BA6;
+  --academy-500: #F93D88;
+  --academy-600: #E5176A;
+  --academy-700: #B20B4E;
+  --academy-800: #7B0233;
+  --academy-900: #43001B;
+  --academy-950: #22000D;
+  --brown-50: #FAF2EF;
+  --brown-100: #F4E4DF;
+  --brown-200: #E9CABF;
+  --brown-300: #DAAE9F;
+  --brown-400: #C7907E;
+  --brown-500: #AD715E;
+  --brown-600: #8C523F;
+  --brown-700: #6B3624;
+  --brown-800: #461D10;
+  --brown-900: #1F0B04;
+  --brown-950: #100501;
+  --primary: var(--pal-600);
+  --gold-accent: var(--gold-400);
+  --brand-black: var(--gray-950);
+  --danger: var(--red-600);
+  --warning: var(--orange-600);
+  --success: var(--green-600);
+  --info: var(--blue-600);
+  --background-light: var(--gray-100);
+  --surface-light: #FFFFFF;
+  --border-light: var(--gray-200);
+  --border-strong-light: var(--gray-300);
+  --text-primary-light: var(--gray-950);
+  --text-secondary-light: var(--gray-700);
+  --text-muted-light: var(--gray-600);
+  --nav-active-light: var(--pal-600);
+  --alert-danger-bg-light: var(--red-50);
+  --alert-danger-border-light: var(--red-100);
+  --alert-danger-text-light: var(--red-700);
+  --alert-warning-bg-light: var(--orange-50);
+  --alert-warning-border-light: var(--orange-100);
+  --alert-warning-text-light: var(--orange-700);
+  --alert-success-bg-light: var(--green-50);
+  --alert-success-border-light: var(--green-100);
+  --alert-success-text-light: var(--green-700);
+  --alert-info-bg-light: var(--blue-50);
+  --alert-info-border-light: var(--blue-100);
+  --alert-info-text-light: var(--blue-700);
+  --background-dark: var(--gray-950);
+  --surface-dark: var(--gray-900);
+  --border-dark: var(--gray-800);
+  --text-primary-dark: var(--gray-50);
+  --text-secondary-dark: var(--gray-500);
+  --text-muted-dark: var(--gray-600);
+  --nav-active-dark: var(--pal-400);
+  --alert-danger-bg-dark: var(--red-900);
+  --alert-danger-text-dark: var(--red-300);
+  --alert-warning-bg-dark: var(--orange-900);
+  --alert-warning-text-dark: var(--orange-300);
+  --alert-success-bg-dark: var(--green-900);
+  --alert-success-text-dark: var(--green-300);
+  --alert-info-bg-dark: var(--blue-900);
+  --alert-info-text-dark: var(--blue-300);
+  --status-successful-bg: var(--green-50);
+  --status-successful-text: var(--green-700);
+  --status-pending-bg: var(--orange-50);
+  --status-pending-text: var(--orange-700);
+  --status-in-progress-bg: var(--blue-50);
+  --status-in-progress-text: var(--blue-700);
+  --status-failed-bg: var(--red-50);
+  --status-failed-text: var(--red-700);
+  --status-refunded-bg: var(--gray-100);
+  --status-refunded-text: var(--gray-700);
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-inline-xs: 4px;
+  --space-inline-sm: 8px;
+  --space-inline-md: 16px;
+  --space-inline-lg: 24px;
+  --space-block-xs: 4px;
+  --space-block-sm: 8px;
+  --space-block-md: 16px;
+  --space-block-lg: 24px;
+  --padding-card-sm: 12px;
+  --padding-card-md: 16px;
+  --gap-section: 24px;
+  --gap-marketing-sm: 48px;
+  --gap-marketing-md: 64px;
+  --gap-marketing-lg: 96px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+  --radius-full: 9999px;
+  --radius-input: var(--radius-md);
+  --radius-button: var(--radius-md);
+  --radius-button-pill: var(--radius-pill);
+  --radius-card: var(--radius-lg);
+  --radius-table: var(--radius-lg);
+  --radius-modal: var(--radius-xl);
+  --radius-badge: var(--radius-pill);
+  --radius-alert: var(--radius-lg);
+  --radius-tooltip: var(--radius-md);
+  --radius-logo-badge: 21.4% of mark width h (corner radius = 3a where a = h/14);
+  --padding-logo-badge: 7.14% of mark width h (a = h/14);
+  --border-width-hairline: 1px;
+  --border-width-thick: 2px;
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px rgba(16,24,40,0.04);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.30);
+  --shadow-md: 0 4px 10px rgba(0,0,0,0.40);
+  --shadow-lg: 0 12px 24px rgba(0,0,0,0.50);
+  --shadow-ring: 0 0 0 3px rgba(10,51,255,0.35);
+  --tw-bg-opacity: 1;
+  --tw-content: "";
+  --tw-border-spacing-x: 0;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-ring-color: rgba(2,191,228,.5);
+  --shadow-shadow: 0 0 #0000;
+  --tw-ordinal: ordinal;
+  --tw-blur: blur(8px);
+  --tw-grayscale: grayscale(100%);
+  --tw-invert: invert(100%);
+}
+/* --- MANAGED TYPOGRAPHY VARS START (do not edit manually) --- */
+html {
+  --font-body: IRANYekanX, Vazirmatn, Tahoma, sans-serif;
+  --font-heading: IRANYekanX, Vazirmatn, Tahoma, sans-serif;
+}
+/* --- MANAGED TYPOGRAPHY VARS END --- */
+
+/* --- BASE TYPOGRAPHY START (do not edit manually) --- */
+@layer base {
+  body {
+    font-family: var(--font-body, inherit);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading, var(--font-body, inherit));
+  }
+}
+/* --- BASE TYPOGRAPHY END --- */
