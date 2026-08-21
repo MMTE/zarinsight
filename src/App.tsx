@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnalysisProvider } from './contexts/AnalysisContext';
 import { AppShell } from './components/layout/AppShell';
+import { PanelDashboard } from './pages/PanelDashboard';
 import { Overview } from './pages/Overview';
 import { Insights } from './pages/Insights';
 import { InsightDetail } from './pages/InsightDetail';
@@ -22,6 +23,7 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<AppShell />}>
+            <Route path="/panel" element={<PanelDashboard />} />
             <Route path="/" element={<Overview />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/insights/:insightId" element={<InsightDetail />} />
