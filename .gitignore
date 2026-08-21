@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# dataset artifacts (ADR-0002/0010): only seed.db.gz is committed
+data/*
+!data/seed.db.gz*
+!data/.gitkeep
+other_challenge_data.csv
+*.sqlite
+*.sqlite-*
