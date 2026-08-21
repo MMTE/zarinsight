@@ -1,5 +1,5 @@
 import {
-  LayoutDashboardIcon,
+  ActivityIcon,
   LayoutGridIcon,
   LightbulbIcon,
   TrendingUpIcon,
@@ -13,12 +13,12 @@ import {
 export interface NavItem {
   to: string;
   label: string;
-  icon: typeof LayoutDashboardIcon;
+  icon: typeof ActivityIcon;
 }
 
 export const primaryNav: NavItem[] = [
-{ to: '/', label: 'نمای کلی', icon: LayoutDashboardIcon },
 { to: '/panel', label: 'داشبورد درگاه', icon: LayoutGridIcon },
+{ to: '/', label: 'وضعیت کسب و کار', icon: ActivityIcon },
 { to: '/insights', label: 'بینش‌های مهم', icon: LightbulbIcon },
 { to: '/sales', label: 'فروش', icon: TrendingUpIcon },
 { to: '/customers', label: 'مشتریان', icon: UsersIcon },
