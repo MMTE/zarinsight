@@ -1,11 +1,125 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BellIcon, ChevronDownIcon, MenuIcon, SearchIcon } from 'lucide-react';
+import {
+  BellIcon,
+  ChevronDownIcon,
+  LifeBuoyIcon,
+  LogOutIcon,
+  MenuIcon,
+  SearchIcon,
+  SettingsIcon,
+  UserIcon
+} from 'lucide-react';
 import { Select } from '../Select';
 import { Badge } from '../Badge';
-import { useAnalysis } from '../../contexts/AnalysisContext';
+import { Avatar } from '../../design-system/Avatar';
 import { business, compareOptions, periodOptions } from '../../data/overview';
 import { notifications } from '../../data/notifications';
+import { useAnalysis } from '../../contexts/AnalysisContext';
+
+
+function ProfileMenu() {
+  const [open, setOpen] = React.useState(false);
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="حساب کاربری"
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node)) setOpen(false);
+        }}
+        className="flex items-center gap-1.5 rounded-xl p-1 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-pal-600 focus-visible:ring-offset-2"
+      >
+        <Avatar name={business.user} size="sm" status="online" />
+        <ChevronDownIcon
+          className={`hidden h-4 w-4 text-slate-400 transition-transform sm:block ${open ? 'rotate-180' : ''}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label="منوی حساب کاربری"
+          className="fixed inset-x-4 top-[68px] z-30 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-64"
+        >
+          <div className="flex items-center gap-3 border-b border-slate-100 p-3">
+            <Avatar name={business.user} size="md" status="online" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-900">{business.user}</p>
+              <p className="truncate text-xs text-slate-500">{business.meta}</p>
+            </div>
+          </div>
+          <div className="p-1.5">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-pal-600"
+            >
+              <UserIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              پروفایل کاربری
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-pal-600"
+            >
+              <SettingsIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              تنظیمات
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                navigate('/methodology');
+              }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-pal-600"
+            >
+              <LifeBuoyIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              روش تحلیل و شفافیت داده
+            </button>
+          </div>
+          <div className="border-t border-slate-100 p-1.5">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+            >
+              <LogOutIcon className="h-4 w-4" aria-hidden="true" />
+              خروج از حساب
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
   const navigate = useNavigate();
@@ -18,7 +132,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
         aria-label="اصلی"
         className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6"
       >
-        {/* Right cluster (RTL start): hamburger + logo */}
+        {/* Right cluster (RTL start): hamburger + business identity */}
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -44,7 +158,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
           <span>در داده‌ها جست‌وجو کنید یا سؤال بپرسید...</span>
         </button>
 
-        {/* Left cluster (RTL end): analytics controls, notifications, avatar */}
+        {/* Left cluster (RTL end): analytics controls, notifications, profile */}
         <div className="flex items-center gap-1 sm:gap-2">
           <Select
             aria-label="بازه زمانی"
@@ -80,26 +194,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
           <span className="mx-1 hidden h-6 w-px bg-slate-200 sm:block" />
 
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-xl py-1 pl-2 pr-1 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-pal-600 focus-visible:ring-offset-2"
-          >
-            <span
-              aria-hidden="true"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-pal-600/10 text-sm font-semibold text-pal-700"
-            >
-              {business.user
-                .trim()
-                .split(/\s+/)
-                .slice(0, 2)
-                .map((part) => part[0])
-                .join('')}
-            </span>
-            <span className="hidden text-sm font-medium text-slate-700 sm:block">
-              {business.user}
-            </span>
-            <ChevronDownIcon className="hidden h-4 w-4 text-slate-400 sm:block" aria-hidden="true" />
-          </button>
+          <ProfileMenu />
         </div>
       </nav>
 
