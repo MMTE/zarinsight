@@ -41,7 +41,11 @@ CREATE TABLE fact_session(
   date_id TEXT NOT NULL, hour INTEGER NOT NULL, created_at TEXT NOT NULL,
   n_attempts INTEGER NOT NULL, n_real_attempts INTEGER NOT NULL,
   verify_type TEXT, verify_time_ms INTEGER, verified_at TEXT, settled_at TEXT,
-  payer_card_key TEXT, issuer_bank_code TEXT) WITHOUT ROWID;
+  payer_card_key TEXT, issuer_bank_code TEXT,
+  band TEXT,                          -- global q1..q4 assignment (NTILE per merchant)
+  is_top10 INTEGER,                   -- global top-decile flag
+  card_seq INTEGER                    -- 1-based nth success for this card at this merchant
+) WITHOUT ROWID;
 CREATE TABLE etl_quarantine(
   session_key TEXT NOT NULL, reason TEXT NOT NULL, detail TEXT);
 
@@ -197,7 +201,8 @@ export async function buildDataset({
            COALESCE(v.verified_at, s.verified_at),
            COALESCE(v.settled_at, s.settled_at),
            COALESCE(v.payer_card_key, s.payer_card_key),
-           COALESCE(v.issuer_bank_code, s.issuer_bank_code)
+           COALESCE(v.issuer_bank_code, s.issuer_bank_code),
+           NULL, NULL, NULL
     FROM (SELECT session_key, COUNT(*) AS n, MIN(try_seq) AS min_seq,
                  SUM(CASE WHEN try_status <> 'NoAttempt' THEN 1 ELSE 0 END) AS real_attempts
           FROM stg.attempt_stage GROUP BY session_key) g
@@ -304,20 +309,40 @@ export async function buildDataset({
     FROM fact_attempt a JOIN fact_session s ON s.session_key = a.session_key
     WHERE a.psp_code IS NOT NULL
     GROUP BY substr(s.date_id,1,7), a.psp_code, s.merchant_key`);
-  // amount bands: per-merchant quartiles + top decile over all sessions
-  phase('agg_psp done'); db.exec(`INSERT INTO agg_amount_band
-    WITH banded AS (
-      SELECT merchant_key, amount, is_success, NTILE(4) OVER (PARTITION BY merchant_key ORDER BY amount, session_key) AS q,
-             NTILE(10) OVER (PARTITION BY merchant_key ORDER BY amount, session_key) AS d10
-      FROM fact_session)
-    SELECT merchant_key,
-           CASE WHEN q = 1 THEN 'q1' WHEN q = 2 THEN 'q2' WHEN q = 3 THEN 'q3' ELSE 'q4' END,
-           COUNT(*), SUM(is_success), SUM(CASE WHEN is_success THEN amount ELSE 0 END)
-    FROM banded GROUP BY merchant_key, q
+  // amount bands: per-merchant quartiles + top decile — materialized on fact_session
+  // so SegmentFilter.amountBand reproduces the GLOBAL assignment (CONTRACTS §4)
+  phase('agg_psp done'); db.exec(`
+    CREATE TEMP TABLE tmp_band AS
+    SELECT session_key,
+           CASE WHEN NTILE(4) OVER w = 1 THEN 'q1' WHEN NTILE(4) OVER w = 2 THEN 'q2'
+                WHEN NTILE(4) OVER w = 3 THEN 'q3' ELSE 'q4' END AS band,
+           CASE WHEN NTILE(10) OVER w = 10 THEN 1 ELSE 0 END AS is_top10
+    FROM fact_session
+    WINDOW w AS (PARTITION BY merchant_key ORDER BY amount, session_key)`);
+  db.exec('CREATE UNIQUE INDEX temp.tmp_band_session ON tmp_band(session_key)');
+  db.exec(`UPDATE fact_session SET
+    band = (SELECT band FROM tmp_band WHERE tmp_band.session_key = fact_session.session_key),
+    is_top10 = (SELECT is_top10 FROM tmp_band WHERE tmp_band.session_key = fact_session.session_key)`);
+  db.exec(`INSERT INTO agg_amount_band
+    SELECT merchant_key, band, COUNT(*), SUM(is_success),
+           SUM(CASE WHEN is_success THEN amount ELSE 0 END)
+    FROM fact_session GROUP BY merchant_key, band
     UNION ALL
     SELECT merchant_key, 'top10', COUNT(*), SUM(is_success),
            SUM(CASE WHEN is_success THEN amount ELSE 0 END)
-    FROM banded WHERE d10 = 10 GROUP BY merchant_key`);
+    FROM fact_session WHERE is_top10 = 1 GROUP BY merchant_key`);
+  db.exec(`DROP TABLE tmp_band`);
+  // card sequence: nth successful session of this card at this merchant (dense order
+  // by created_at, session_key) — powers new/returning filters + repeat metrics
+  db.exec(`
+    CREATE TEMP TABLE tmp_card AS
+    SELECT session_key, ROW_NUMBER() OVER (
+      PARTITION BY merchant_key, payer_card_key ORDER BY created_at, session_key) AS rn
+    FROM fact_session WHERE is_success = 1 AND payer_card_key IS NOT NULL`);
+  db.exec('CREATE UNIQUE INDEX temp.tmp_card_session ON tmp_card(session_key)');
+  db.exec(`UPDATE fact_session SET
+    card_seq = (SELECT rn FROM tmp_card WHERE tmp_card.session_key = fact_session.session_key)`);
+  db.exec(`DROP TABLE tmp_card`);
   // cohorts: category × volume-quartile × avg-success-amount-quartile
   phase('agg_band done'); db.exec(`INSERT INTO agg_cohort
     WITH m AS (
