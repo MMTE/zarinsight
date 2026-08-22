@@ -46,6 +46,7 @@ const RULE_TABLE = [
 
 export function createApiApp() {
   const registry = new Registry(join(repoRoot, 'data', 'datasets'));
+  const registryReload = () => registry.reload();
   const app = express();
   app.use(express.json({ limit: '256kb' }));
 
@@ -64,6 +65,36 @@ export function createApiApp() {
   app.post('/api/datasets/:id/activate', (req, res) => {
     if (!registry.activate(req.params.id)) return fail(res, 404, 'چنین مجموعه‌داده‌ای پیدا نشد');
     ok(res, { active: registry.active().id });
+  });
+
+  // connect live ZarinPal merchant account (ADR-0010 §3): key never persisted;
+  // rows pulled via the provider, built into data/datasets/live-<merchant>/
+  app.post('/api/datasets/connect', async (req, res) => {
+    const { apiKey, merchantKey } = (req.body ?? {}) as { apiKey?: string; merchantKey?: string };
+    if (!apiKey || !merchantKey) {
+      return fail(res, 400, 'کلید API و شناسه پذیرنده هر دو لازم است');
+    }
+    const { listLiveRows } = await import('./providers/zarinpal-live.mjs');
+    const { buildDataset } = await import('../scripts/lib/core.mjs');
+    let rows;
+    try {
+      rows = await listLiveRows({ apiKey, merchantKey });
+    } catch (e) {
+      return fail(res, 502, `اتصال به زرین‌پال ناموفق بود: ${String((e as Error).message)}`);
+    }
+    if (!rows.length) return fail(res, 422, 'تراکنشی برای این حساب دریافت نشد');
+    const datasetId = `live-${merchantKey}`;
+    const result = await buildDataset({
+      datasetId, provider: 'zarinpal-live',
+      rows: (async function* () { yield* rows; })(),
+      sha256: '', availableFields: [
+        'session_key', 'merchant_key', 'amount', 'session_status', 'created_at',
+        'payer_card_key', 'switch_response_code'],
+      grain: 'session', merchantScope: 'single',
+      outDir: join(repoRoot, 'data', 'datasets', datasetId), gates: null,
+    });
+    registryReload();                                   // pick up the new dataset dir
+    ok(res, { datasetId, counts: result.counts });
   });
   app.get('/api/merchants', (req, res) => {
     const ds = registry.get(String(req.query.dataset)) ?? registry.active();

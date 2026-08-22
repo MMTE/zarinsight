@@ -49,4 +49,14 @@ activate(id) {
 get(id) {
     return this.entries.get(id);
   }
+
+  /** Re-scan the datasets dir after a live sync added a dataset (closes old handles). */
+  reload() {
+    for (const entry of this.entries.values()) {
+      try { entry.db.close(); } catch { /* already closed */ }
+    }
+    const fresh = new Registry(this.root);
+    this.entries = fresh.entries;
+    this.activeId = fresh.activeId;
+  }
 }

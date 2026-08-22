@@ -285,7 +285,7 @@ export async function buildDataset({
            SUM(CASE WHEN s.is_success THEN s.amount ELSE 0 END),
            SUM(CASE WHEN s.is_captured THEN s.amount ELSE 0 END),
            SUM(CASE WHEN s.session_status = 'Failed' THEN s.amount ELSE 0 END),
-           SUM(CASE WHEN s.is_success THEN s.adjusted_fee ELSE 0 END),
+           COALESCE(SUM(CASE WHEN s.is_success THEN s.adjusted_fee ELSE 0 END), 0),
            SUM(s.n_attempts > 1),
            SUM(s.n_real_attempts), 0
     FROM fact_session s GROUP BY s.date_id, s.merchant_key`);
