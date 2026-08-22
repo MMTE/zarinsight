@@ -34,3 +34,8 @@ other_challenge_data.csv
 # eve build artifacts
 .eve/
 .output/
+
+# secrets (never committed)
+.env
+.env.*
+captures/
