@@ -12,7 +12,8 @@
     "seed": "node scripts/seed.mjs",
     "data:build": "node scripts/etl.mjs",
     "agent:build": "eve build",
-    "agent:start": "eve start --port 2319 --host 127.0.0.1"
+    "agent:start": "eve start --port 2319 --host 127.0.0.1",
+    "start:liara": "node scripts/start-liara.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.34",
