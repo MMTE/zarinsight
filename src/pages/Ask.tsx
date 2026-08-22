@@ -161,11 +161,16 @@ async function readReply(body: ReadableStream<Uint8Array>, question: string): Pr
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let raw = '';
-  while (raw.length < 200_000) {
+  while (raw.length < 5_000_000) {
     const { done, value } = await reader.read();
     if (done) break;
     raw += decoder.decode(value, { stream: true });
-    if (raw.includes('"type":"turn.completed"') || raw.includes('MODEL_CALL_FAILED')) break;
+    // Fast-path model failures; for turn completion, wait until the event's
+    // LINE is fully received — breaking on the bare substring can cut the
+    // final deltas/message line mid-transit and truncate the reply.
+    if (raw.includes('MODEL_CALL_FAILED')) break;
+    const lastNewline = raw.lastIndexOf('\n');
+    if (raw.slice(0, lastNewline).includes('"type":"turn.completed"')) break;
   }
   // NDJSON; skip a malformed/truncated tail line instead of failing the turn.
   const events = raw.split('\n').filter((l) => l.startsWith('{'))

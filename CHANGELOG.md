@@ -42,6 +42,11 @@ and this project adheres to Semantic Versioning.
   `dev.sh` (liara pattern): build agent → start on :2319 → health-wait →
   vite. `agent:start` now pins `--port 2319 --host 127.0.0.1`; quickstart
   documents the optional provider key.
+- Long agentic replies truncated or flipped to the FAQ fallback: `readReply`
+  capped the event stream at 200K chars, but tool-using turns emit ~1.4 MB of
+  reasoning deltas before the reply — cap raised to 5M and completion is only
+  detected on a line-terminated `turn.completed` event (bare-substring breaks
+  cut the final message mid-transit).
 
 ### Security
 - `.env` / `.env.*` gitignored — provider keys never enter the repo.
