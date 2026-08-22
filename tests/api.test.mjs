@@ -77,6 +77,32 @@ test('insight reproducibility: records total == eligible population (session gra
   assert.ok(!('adjusted_fee' in (rec.body.rows[0] ?? {})));
 });
 
+test('insight by id + toUiInsight: detail-page data path maps the live payload', async () => {
+  const { toUiInsight } = await import('../src/lib/api.ts');
+  const { status, body } = await get('/api/insights/I-03:M156:2026-04');
+  assert.equal(status, 200);
+  assert.equal(body.detectorId, 'I-03');
+  assert.ok(body.evidence.sql, 'sql present');
+  assert.ok(body.evidence.filter.merchantKeys.includes('M156'), 'filter present');
+  const ui = toUiInsight(body);
+  // evidence wired to the real payload (no hardcoded zeros / empty rows)
+  assert.equal(ui.evidence.usableRecords, body.evidence.eligiblePopulation.rows);
+  assert.ok(ui.evidence.rows.length >= 2, 'stat rows from payload');
+  assert.ok(ui.evidence.population.includes(
+    body.evidence.eligiblePopulation.rows.toLocaleString('fa-IR', { maximumFractionDigits: 1 })));
+  assert.ok(!ui.evidence.period.includes('undefined'), 'period label');
+  assert.ok(!ui.methodology.coverage.includes('undefined'), 'coverage label');
+  assert.ok(body.impact ? ui.evidence.formula.includes('شکاف') || ui.evidence.formula.includes('سهم')
+    || ui.evidence.formula.includes('درصد تغییر') : ui.evidence.formula.includes('مستقیماً'),
+  'formula describes the impact method');
+  assert.equal(ui.detectedOn, body.period.key);
+  // records drill used by the evidence panel
+  const rec = await get(`/api/insights/${encodeURIComponent(body.id)}/records?page=1`);
+  assert.equal(rec.status, 200);
+  assert.ok(rec.body.rows.length > 0, 'sample rows');
+  assert.ok('session_key' in rec.body.rows[0] && 'amount' in rec.body.rows[0]);
+});
+
 test('unknown insight → 404 with fa error; bad lifecycle → 400 without write', async () => {
   const miss = await get('/api/insights/nope:1:2');
   assert.equal(miss.status, 404);

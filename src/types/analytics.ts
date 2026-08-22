@@ -66,7 +66,7 @@ export interface Insight {
   recommendation: string;
   investigateLabel: string;
   investigateTo: string;
-  chart: {label: string;current: number;previous: number;}[];
+  chart: {label: string;current: number;previous?: number;}[];
   chartUnit: 'percent' | 'toman' | 'second';
   evidence: Evidence;
   methodology: Methodology;

@@ -270,7 +270,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const dist = join(repoRoot, 'dist');
   if (existsSync(dist)) {
     const sirv = (await import('sirv')).default;
-    app.use(sirv(dist));
+    app.use(sirv(dist, { single: true }));            // SPA history fallback (deep links)
   }
   const port = Number(process.env.PORT ?? 3000);
   app.listen(port, () => console.log(`[zarinsight] http://localhost:${port}`));

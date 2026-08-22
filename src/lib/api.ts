@@ -1,6 +1,7 @@
 // Live API client (CONTRACTS §5–§7) + adapters from engine shapes to the UI's
 // prototype shapes so landed components render real data unchanged.
 import type { Insight as UiInsight, InsightCategory, InsightTopic, Kpi } from '../types/analytics';
+import type { SegmentFilter } from './types';
 
 export interface EngineInsight {
   id: string;
@@ -15,9 +16,22 @@ export interface EngineInsight {
   impact?: { amountIrr: number; period: string; method: string; capPp?: number; label: string };
   confidence: 'high' | 'medium' | 'low';
   diagnosis?: Array<{ kind: string; label: string; rows: Array<Record<string, unknown>> }>;
-  evidence: { eligiblePopulation: { rows: number; sessions: number; ruleId: string } };
+  evidence: {
+    eligiblePopulation: { rows: number; sessions: number; ruleId: string };
+    filter: SegmentFilter;
+    sql: string;
+    dataCaveats: string[];
+  };
   recommendation: { text: string };
   rankScore: number;
+}
+
+export interface RecordsPage {
+  total: number;
+  page: number;
+  pageSize: number;
+  rows: Array<Record<string, unknown>>;
+  filter?: SegmentFilter;
 }
 
 export interface OverviewResponse {
@@ -55,10 +69,22 @@ const METRIC_LABEL: Record<string, string> = {
   revenue: 'درآمد موفق', success_rate: 'نرخ موفقیت', retry_rate: 'نرخ تلاش مجدد',
   attempt_success_rate: 'نرخ موفقیت تلاش', returning_session_share: 'سهم بازگشتی‌ها',
   concentration_top5: 'تمرکز درآمد (۵ مشتری اول)',
+  concentration_top_decile: 'تمرکز درآمد (۱۰٪ مشتریان بزرگ)',
+};
+
+/** Persian description of each impact formula (impact.ts F-01…F-04). */
+const IMPACT_FORMULA_FA: Record<string, string> = {
+  'F-01': 'مبلغ پرداخت‌های ناموفق × شکاف نرخ با گروه مشابه (سقف ۱۰ واحد درصد)، ماهانه‌شده',
+  'F-02': 'ارزش موفق مسیر ضعیف × شکاف تعدیل‌شده با بهترین مسیر (سقف ۱۰ واحد درصد)',
+  'F-03': 'سهم مشتری اول × درآمد ماهانه',
+  'F-04': 'درصد تغییر × درآمد ماهانهٔ جاری',
 };
 
 export function toUiInsight(e: EngineInsight): UiInsight {
   const impactIrr = e.impact?.amountIrr ?? 0;
+  const periodLabel = e.period.start && e.period.end
+    ? `${e.period.start} تا ${e.period.end}`
+    : e.period.key;                                     // some atoms carry only periodKey
   const contributions = (e.diagnosis?.[0]?.rows ?? []).map((r) => ({
     label: String(r.driver ?? r.psp ?? r.label ?? 'عامل'),
     points: Number(r.sharePct ?? r.gapPp ?? 0),
@@ -99,31 +125,50 @@ export function toUiInsight(e: EngineInsight): UiInsight {
       : [],
     chartUnit: e.metric.unit === 'rate' ? 'percent' : 'toman',
     evidence: {
-      population: `${fa(e.evidence.eligiblePopulation.rows)} ردیف واجد شرایط (${e.evidence.eligiblePopulation.ruleId})`,
-      period: e.period.key,
+      population: `${fa(e.evidence.eligiblePopulation.rows)} ردیف واجد شرایط (${fa(e.evidence.eligiblePopulation.sessions)} جلسه) — قاعدهٔ ${e.evidence.eligiblePopulation.ruleId}`,
+      period: periodLabel,
       usableRecords: e.evidence.eligiblePopulation.rows,
       excludedRecords: 0,
       excludedReason: '—',
-      rows: [],
-      formula: e.impact?.method ?? '—',
+      rows: [
+        { label: 'قاعدهٔ واجد شرایط', value: e.evidence.eligiblePopulation.ruleId,
+          note: `${fa(e.evidence.eligiblePopulation.rows)} ردیف / ${fa(e.evidence.eligiblePopulation.sessions)} جلسه` },
+        { label: 'آشکارساز', value: e.detectorId, note: `نوع: ${e.type}` },
+        ...(e.comparison ? [{ label: 'گروه مقایسه', value: e.comparison.population,
+          note: `روش: ${e.comparison.method === 'mix_adjusted' ? 'تعدیل‌شده با ترکیب' : 'میانگین ساده' }` }] : []),
+        ...(e.impact ? [{ label: 'روش برآورد اثر', value: e.impact.method,
+          note: `به ازای هر ${e.impact.period === 'month' ? 'ماه' : e.impact.period}` }] : []),
+      ],
+      formula: e.impact ? IMPACT_FORMULA_FA[e.impact.method] ?? e.impact.method
+        : 'مقدار مستقیماً روی جامعهٔ واجد شرایطِ فیلتر زیر محاسبه شده است.',
       steps: e.diagnosis?.[0]?.rows?.map((r) => ({
         label: String(r.driver ?? r.psp ?? 'عامل'),
         value: String(r.sharePct ?? r.gapPp ?? ''),
-      })) ?? [],
-      limitation: 'شما می‌توانید فیلتر و پرس‌وجوی تولیدکنندهٔ این عدد را در «محاسبه» ببینید.',
+      })) ?? (e.metric.previousValue != null ? [
+        { label: 'دوره قبل', value: e.metric.unit === 'rate' ? `${fa(e.metric.previousValue * 100)}٪` : faIrr(e.metric.previousValue) },
+        { label: 'دوره فعلی', value: e.metric.unit === 'rate' ? `${fa(e.metric.value * 100)}٪` : faIrr(e.metric.value) },
+      ] : []),
+      limitation: e.evidence.dataCaveats?.length
+        ? e.evidence.dataCaveats.join('؛ ')
+        : 'فیلتر و پرس‌وجوی تولیدکنندهٔ این عدد را در «مشاهده محاسبه» ببینید.',
     },
     methodology: {
       type: e.detectorId,
       peerGroup: e.comparison?.population ?? '—',
       minSample: '۱٬۰۰۰ ردیف',
-      coverage: e.period.key,
+      coverage: periodLabel,
       confidence: e.confidence,
       simple: 'اعداد از موتور قطعی روی پایگاه دادهٔ ساخته‌شده محاسبه شده‌اند.',
-      technical: [`detector: ${e.detectorId}`, `rule: ${e.evidence.eligiblePopulation.ruleId}`],
+      technical: [
+        `detector: ${e.detectorId}`,
+        `rule: ${e.evidence.eligiblePopulation.ruleId}`,
+        ...(e.evidence.sql ? [e.evidence.sql] : []),
+      ],
     },
     caveat: 'کارت‌ها شناسه‌های مخصوص همین پذیرنده‌اند؛ مقایسهٔ بین پذیرنده‌ها ممکن نیست.',
   };
 }
+type EngineInsightsResponse = EngineInsight[];
 
 async function json<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -134,14 +179,14 @@ async function json<T>(url: string): Promise<T> {
 export const api = {
   datasets: () => json<{ active: string; datasets: Array<Record<string, unknown>> }>('/api/datasets'),
   merchants: () => json<{ dataset: string; merchants: MerchantRow[] }>('/api/merchants'),
-  insights: (scope?: string, limit = 50) => json<EngineInsight[]>(
+  insights: (scope?: string, limit = 50) => json<EngineInsightsResponse>(
     `/api/insights?limit=${limit}${scope && scope !== 'portfolio' ? `&scope=${scope}` : ''}`),
+  insight: (id: string) => json<EngineInsight>(`/api/insights/${encodeURIComponent(id)}`),
   overview: (scope = 'portfolio') => json<OverviewResponse>(`/api/overview?scope=${scope}`),
   explore: (dim: string, scope = 'portfolio') => json<{ series: Array<Record<string, unknown>> }>(
     `/api/explore/metrics?dim=${dim}&scope=${scope}`),
-  records: (id: string, page = 1) => json<{
-    total: number; page: number; pageSize: number;
-    rows: Array<Record<string, unknown>>; }>(`/api/insights/${encodeURIComponent(id)}/records?page=${page}`),
+  records: (id: string, page = 1) => json<RecordsPage>(
+    `/api/insights/${encodeURIComponent(id)}/records?page=${page}`),
 };
 
 export function kpisFromOverview(o: OverviewResponse): Kpi[] {

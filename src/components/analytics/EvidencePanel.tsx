@@ -3,9 +3,42 @@ import { ChevronDownIcon, ScrollTextIcon } from 'lucide-react';
 import { Card } from '../Card';
 import { Button } from '../Button';
 import type { Evidence } from '../../types/analytics';
+import type { SegmentFilter } from '../../lib/types';
+import type { RecordsPage } from '../../lib/api';
+import { faIrr } from '../../lib/api';
 import { formatNumber } from '../../utils/format';
 
-export function EvidencePanel({ evidence }: {evidence: Evidence;}) {
+interface EvidencePanelProps {
+  evidence: Evidence;
+  sql?: string;
+  filter?: SegmentFilter;
+  records?: RecordsPage | null;
+}
+
+const STATUS_FA: Record<string, string> = {
+  success: 'موفق', failed: 'ناموفق', captured_unverified: 'برداشت تاییدنشده',
+  inbank: 'در بانک', noattempt: 'بدون تلاش',
+};
+
+function filterRows(filter: SegmentFilter) {
+  const rows: Array<{ label: string; value: string }> = [
+    { label: 'بازهٔ زمانی', value: `${filter.dateRange[0]} تا ${filter.dateRange[1]}` },
+  ];
+  if (filter.merchantKeys?.length) {
+    rows.push({ label: 'پذیرنده', value: filter.merchantKeys.length === 1
+      ? filter.merchantKeys[0] : `${formatNumber(filter.merchantKeys.length)} پذیرنده` });
+  }
+  if (filter.statuses?.length) {
+    rows.push({ label: 'وضعیت‌ها', value: filter.statuses.map((s) => STATUS_FA[s] ?? s).join('، ') });
+  }
+  if (filter.pspCodes?.length) rows.push({ label: 'مسیرهای پرداخت', value: filter.pspCodes.join('، ') });
+  if (filter.amountBand) rows.push({ label: 'بازهٔ مبلغ', value: filter.amountBand });
+  if (filter.hourOfDay) rows.push({ label: 'بازهٔ ساعت', value: `${filter.hourOfDay[0]} تا ${filter.hourOfDay[1]}` });
+  if (filter.cardRepeat) rows.push({ label: 'نوع مشتری', value: filter.cardRepeat === 'new' ? 'جدید' : 'بازگشتی' });
+  return rows;
+}
+
+export function EvidencePanel({ evidence, sql, filter, records }: EvidencePanelProps) {
   const [open, setOpen] = useState(false);
   const [showCalculation, setShowCalculation] = useState(false);
 
@@ -60,13 +93,76 @@ export function EvidencePanel({ evidence }: {evidence: Evidence;}) {
             محدودیت: {evidence.limitation}
           </p>
 
+          {filter &&
+          <div className="mt-4">
+              <p className="text-[12px] font-bold text-gray-950">فیلتر جامعه (قابل بازتولید)</p>
+              <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+                {filterRows(filter).map((row) =>
+              <div key={row.label} className="rounded-lg border border-border-light px-3 py-2">
+                    <dt className="text-[11px] text-gray-700">{row.label}</dt>
+                    <dd className="mt-0.5 text-[12px] font-bold text-gray-950" dir="auto">{row.value}</dd>
+                  </div>
+            )}
+              </dl>
+            </div>
+          }
+
+          {sql &&
+          <div className="mt-4">
+              <p className="text-[12px] font-bold text-gray-950">پرس‌وجوی تولیدکننده</p>
+              <pre
+              dir="ltr"
+              className="mt-2 overflow-x-auto rounded-lg bg-gray-900 px-3 py-2.5 text-[11px] leading-6 text-gray-50">
+                {sql}
+              </pre>
+            </div>
+          }
+
+          {records && records.rows.length > 0 &&
+          <div className="mt-4">
+              <p className="text-[12px] font-bold text-gray-950">
+                نمونهٔ ردیف‌های واجد شرایط ({formatNumber(records.total)} ردیف در کل)
+              </p>
+              <div className="mt-2 overflow-x-auto">
+                <table className="w-full text-[11px] leading-6">
+                  <thead>
+                    <tr className="border-b border-border-light text-gray-700">
+                      <th scope="col" className="px-2 py-1.5 text-start font-bold">تاریخ</th>
+                      <th scope="col" className="px-2 py-1.5 text-start font-bold">شناسهٔ جلسه</th>
+                      <th scope="col" className="px-2 py-1.5 text-start font-bold">مبلغ</th>
+                      <th scope="col" className="px-2 py-1.5 text-start font-bold">وضعیت</th>
+                      <th scope="col" className="px-2 py-1.5 text-start font-bold">تلاش‌ها</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {records.rows.slice(0, 8).map((r, i) =>
+              <tr key={String(r.session_key) + i} className="border-b border-border-light last:border-b-0">
+                      <td className="px-2 py-1.5 text-gray-800" dir="ltr">{String(r.date_id)}</td>
+                      <td className="px-2 py-1.5 text-gray-800" dir="ltr">{String(r.session_key).slice(0, 12)}</td>
+                      <td className="px-2 py-1.5 font-bold text-gray-950">{faIrr(Number(r.amount ?? 0))}</td>
+                      <td className="px-2 py-1.5 text-gray-800">
+                        {STATUS_FA[String(r.session_status)] ?? String(r.session_status)}
+                      </td>
+                      <td className="px-2 py-1.5 text-gray-800">{formatNumber(Number(r.n_attempts ?? 0))}</td>
+                    </tr>
+            )}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-1.5 text-[11px] text-gray-600">
+                صفحهٔ {formatNumber(records.page)} از {formatNumber(Math.max(1, Math.ceil(records.total / records.pageSize)))}؛
+                مبلغ‌ها ریال و فقط برای نسبت‌ها معتبرند (ADR-0006).
+              </p>
+            </div>
+          }
+
           <div className="mt-4">
             <Button
             size="sm"
             variant="outline"
             onClick={() => setShowCalculation((prev) => !prev)}
             aria-expanded={showCalculation}>
-            
+
               {showCalculation ? 'بستن محاسبه' : 'مشاهده محاسبه'}
             </Button>
           </div>
