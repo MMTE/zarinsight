@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BellIcon,
@@ -123,8 +123,25 @@ function ProfileMenu() {
 
 export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
   const navigate = useNavigate();
-  const { period, setPeriod, compare, setCompare, readNotifications } = useAnalysis();
+  const { period, setPeriod, compare, setCompare, readNotifications,
+    merchantKey, setMerchantKey, datasetId, setDatasetId } = useAnalysis();
   const unread = notifications.filter((item) => !readNotifications.includes(item.id)).length;
+  const [merchantOptions, setMerchantOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [datasetOptions, setDatasetOptions] = useState<Array<{ value: string; label: string }>>([]);
+
+  useEffect(() => {
+    fetch('/api/merchants').then((r) => r.json()).then((d) => {
+      setMerchantOptions((d.merchants ?? []).slice(0, 60).map((m: { merchant_key: string; category_title: string }) => ({
+        value: m.merchant_key,
+        label: `${m.merchant_key} — ${m.category_title ?? ''}`,
+      })));
+    }).catch(() => {});
+    fetch('/api/datasets').then((r) => r.json()).then((d) => {
+      setDatasetOptions((d.datasets ?? []).map((x: { id: string; label: string }) => ({
+        value: x.id, label: x.label,
+      })));
+    }).catch(() => {});
+  }, []);
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
@@ -143,7 +160,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
             <MenuIcon className="h-5 w-5" aria-hidden="true" />
           </button>
 
-          <div className="min-w-0 lg:hidden">
+          <div className="min-w-0 hidden lg:block">
             <p className="truncate text-[13px] font-bold text-gray-950">{business.name}</p>
             <p className="text-[11px] text-gray-600">هوش تجاری زرین‌پال</p>
           </div>
@@ -160,6 +177,28 @@ export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
         {/* Left cluster (RTL end): analytics controls, notifications, profile */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {merchantOptions.length > 0 && (
+            <div className="hidden md:block">
+              <Select
+                aria-label="کسب‌وکار"
+                options={merchantOptions}
+                value={merchantOptions.some((o) => o.value === merchantKey) ? merchantKey : merchantOptions[0]?.value}
+                onChange={(event) => setMerchantKey(event.target.value)}
+                size="sm"
+              />
+            </div>
+          )}
+          {datasetOptions.length > 1 && (
+            <div className="hidden lg:block">
+              <Select
+                aria-label="مجموعه داده"
+                options={datasetOptions}
+                value={datasetId}
+                onChange={(event) => setDatasetId(event.target.value)}
+                size="sm"
+              />
+            </div>
+          )}
           <Select
             aria-label="بازه زمانی"
             options={periodOptions}

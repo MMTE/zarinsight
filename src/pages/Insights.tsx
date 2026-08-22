@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { PageHeader, SectionHeading } from '../components/analytics/PageHeader';
@@ -11,6 +11,8 @@ import {
   rankedInsights,
   topicLabels } from
 '../data/insights';
+import { api, toUiInsight } from '../lib/api';
+import type { Insight as UiInsight } from '../types/analytics';
 import type { InsightCategory, InsightTopic } from '../types/analytics';
 import { formatToman } from '../utils/format';
 
@@ -65,18 +67,28 @@ function FilterRow<T extends string>({
 }
 
 export function Insights() {
-  const { states } = useAnalysis();
+  const { states, merchantKey } = useAnalysis();
   const [category, setCategory] = useState<'all' | InsightCategory>('all');
   const [topic, setTopic] = useState<'all' | InsightTopic>('all');
+  const [live, setLive] = useState<UiInsight[] | null>(null);
 
+  useEffect(() => {
+    let alive = true;
+    api.insights(merchantKey).then((rows) => {
+      if (alive) setLive(rows.map(toUiInsight));
+    }).catch(() => { /* mock fallback */ });
+    return () => { alive = false; };
+  }, [merchantKey]);
+
+  const pool = live ?? rankedInsights;
   const filtered = useMemo(
     () =>
-    rankedInsights.filter(
+    pool.filter(
       (insight) =>
       (category === 'all' || insight.category === category) && (
       topic === 'all' || insight.topic === topic)
     ),
-    [category, topic]
+    [pool, category, topic]
   );
 
   const totalImpact = filtered.reduce((sum, insight) => sum + insight.impact, 0);

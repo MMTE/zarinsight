@@ -9,10 +9,10 @@ interface AnalysisContextValue {
   setCompare: (value: string) => void;
   periodLabel: string;
   compareLabel: string;
-  states: Record<string, InsightState>;
-  setInsightState: (id: string, state: InsightState) => void;
-  readNotifications: string[];
-  markNotificationRead: (id: string) => void;
+  merchantKey: string;
+  setMerchantKey: (value: string) => void;
+  datasetId: string;
+  setDatasetId: (value: string) => void;
 }
 
 const AnalysisContext = createContext<AnalysisContextValue | null>(null);
@@ -38,6 +38,8 @@ const initialStates = insights.reduce<Record<string, InsightState>>((acc, insigh
 
 export function AnalysisProvider({ children }: {children: React.ReactNode;}) {
   const [period, setPeriod] = useState('30');
+  const [merchantKey, setMerchantKey] = useState('M156');
+  const [datasetId, setDatasetId] = useState('challenge-2026h1');
   const [compare, setCompare] = useState('previous');
   const [states, setStates] = useState<Record<string, InsightState>>(initialStates);
   const [readNotifications, setReadNotifications] = useState<string[]>([]);
@@ -58,12 +60,16 @@ export function AnalysisProvider({ children }: {children: React.ReactNode;}) {
       setCompare,
       periodLabel: PERIOD_LABELS[period] ?? PERIOD_LABELS['30'],
       compareLabel: COMPARE_LABELS[compare] ?? COMPARE_LABELS.previous,
+      merchantKey,
+      setMerchantKey,
+      datasetId,
+      setDatasetId,
       states,
       setInsightState,
       readNotifications,
       markNotificationRead
     }),
-    [period, compare, states, setInsightState, readNotifications, markNotificationRead]
+    [period, compare, merchantKey, datasetId, states, setInsightState, readNotifications, markNotificationRead]
   );
 
   return <AnalysisContext.Provider value={value}>{children}</AnalysisContext.Provider>;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, ActivityIcon } from 'lucide-react';
 import { Card } from '../components/Card';
@@ -20,6 +20,9 @@ import {
   summary,
   trendSeries } from
 '../data/overview';
+import { api, kpisFromOverview, toUiInsight, faIrr } from '../lib/api';
+import type { Kpi } from '../types/analytics';
+import type { Insight as UiInsight } from '../types/analytics';
 import { formatNumber, formatPercent, formatToman } from '../utils/format';
 
 type TrendMetric = 'revenue' | 'successRate' | 'successCount';
@@ -32,10 +35,37 @@ const TREND_METRICS: {value: TrendMetric;label: string;}[] = [
 
 export function Overview() {
   const navigate = useNavigate();
-  const { states, periodLabel } = useAnalysis();
+  const { states, periodLabel, merchantKey } = useAnalysis();
   const [metric, setMetric] = useState<TrendMetric>('revenue');
+  const [liveKpis, setLiveKpis] = useState<Kpi[] | null>(null);
+  const [liveSummary, setLiveSummary] = useState<{ headline: string; body: string } | null>(null);
+  const [liveTop, setLiveTop] = useState<UiInsight[] | null>(null);
+  const [liveTrend, setLiveTrend] = useState<Array<{ date: string; revenue: number; successRate: number; successCount: number }> | null>(null);
 
-  const topInsights = rankedInsights.slice(0, 3);
+  useEffect(() => {
+    let alive = true;
+    Promise.all([
+      api.overview(merchantKey),
+      api.explore('month', merchantKey),
+    ]).then(([o, ex]) => {
+      if (!alive) return;
+      setLiveKpis(kpisFromOverview(o));
+      setLiveTop(o.top3.map(toUiInsight));
+      const top = o.top3[0];
+      setLiveSummary(top
+        ? { headline: top.title, body: top.summary }
+        : { headline: 'بدون هشدار مهم در این بازه', body: 'شاخص‌های کلیدی از موتور تحلیل به‌روزرسانی شدند.' });
+      setLiveTrend((ex.series as unknown as Array<{ d: string; sessions: number; success: number; revenue: number }>).map((r) => ({
+        date: r.d,
+        revenue: r.revenue,
+        successRate: r.sessions ? r.success / r.sessions : 0,
+        successCount: r.success,
+      })));
+    }).catch(() => { /* keep mock fallback */ });
+    return () => { alive = false; };
+  }, [merchantKey]);
+
+  const topInsights = (liveTop ?? rankedInsights.slice(0, 3));
   const formatMetric = (value: number) =>
   metric === 'revenue' ?
   formatToman(value) :
@@ -54,9 +84,9 @@ export function Overview() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <p className="text-[18px] font-bold leading-8 text-gray-950 lg:text-[20px]">
-              {summary.headline}
+              {(liveSummary ?? summary).headline}
             </p>
-            <p className="mt-2 text-[14px] leading-7 text-gray-800">{summary.body}</p>
+            <p className="mt-2 text-[14px] leading-7 text-gray-800">{(liveSummary ?? summary).body}</p>
             <p className="mt-1 text-[14px] font-bold leading-7 text-pal-800">{summary.findings}</p>
           </div>
           <div className="shrink-0">
@@ -73,7 +103,7 @@ export function Overview() {
 
       <section aria-label="شاخص‌های کلیدی">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {kpis.map((kpi) =>
+          {(liveKpis ?? kpis).map((kpi) =>
           <MetricCard
             key={kpi.id}
             label={kpi.label}
@@ -198,7 +228,7 @@ export function Overview() {
         <LineChart
           ariaLabel={`روند ${TREND_METRICS.find((item) => item.value === metric)?.label} در بازه انتخاب‌شده`}
           seriesLabel={TREND_METRICS.find((item) => item.value === metric)?.label ?? ''}
-          points={trendSeries.map((point) => ({
+          points={(liveTrend ?? trendSeries).map((point) => ({
             label: point.label,
             value: point[metric],
             marker: point.marker

@@ -99,6 +99,8 @@ CREATE VIEW v_init_latency AS SELECT * FROM fact_attempt WHERE init_time_ms IS N
 CREATE INDEX idx_fs_merchant_date ON fact_session(merchant_key, date_id);
 CREATE INDEX idx_fs_date ON fact_session(date_id);
 CREATE INDEX idx_fs_card ON fact_session(merchant_key, payer_card_key);
+CREATE INDEX idx_fs_cardseq ON fact_session(merchant_key, card_seq)
+  WHERE is_success = 1 AND payer_card_key IS NOT NULL;
 CREATE INDEX idx_fa_psp ON fact_attempt(psp_code);
 CREATE INDEX idx_fa_status ON fact_attempt(try_status);
 `;
@@ -343,6 +345,12 @@ export async function buildDataset({
   db.exec(`UPDATE fact_session SET
     card_seq = (SELECT rn FROM tmp_card WHERE tmp_card.session_key = fact_session.session_key)`);
   db.exec(`DROP TABLE tmp_card`);
+  // merchant KPI rollup (returning-share reads never scan facts at runtime)
+  db.exec(`CREATE TABLE agg_merchant_kpi AS
+    SELECT merchant_key, SUM(card_seq = 1) AS new_s, SUM(card_seq >= 2) AS ret_s,
+           COUNT(*) AS card_sessions
+    FROM fact_session WHERE is_success = 1 AND payer_card_key IS NOT NULL
+    GROUP BY merchant_key`);
   // cohorts: category × volume-quartile × avg-success-amount-quartile
   phase('agg_band done'); db.exec(`INSERT INTO agg_cohort
     WITH m AS (
