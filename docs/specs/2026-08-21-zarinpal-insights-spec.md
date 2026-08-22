@@ -50,7 +50,7 @@ datasources (ADR-0010)
   Node API server (/api/*, better-sqlite3, CONTRACTS §5–7)
         ├──▶ Vite UI (RTL fa, React Router) — pages below; dataset + merchant switchers
         └──▶ /eve/* ──▶ eve agent child «تحلیلگر بینش» (ADR-0011) ◀── Ask page chat
-```
+                      ◀── knowledge corpus: BM25 over docs/ + insight search (ADR-0013)
 
 Data flow is one-directional: source → provider → ETL → DB → engine → API/agent → UI.
 The agent reads the same engine through read-only tools (never raw SQL, never
@@ -100,7 +100,9 @@ figures of its own — ADR-0004). No runtime writes except insight lifecycle eve
 11. **`/methodology` روش تحلیل** — generated from eligibility rules, fee-multiplier
     explanation, cohort definitions, confounder methods, infeasible-analyses list —
     regenerated per active dataset.
-12. **`/ask` پرسش و پاسخ** — eve analyst chat («تحلیلگر بینش»); deterministic FAQ
+12. **`/ask` پرسش و پاسخ** — eve analyst chat («تحلیلگر بینش») with agentic search:
+    knowledge retrieval over methodology/catalog/data-guide with citations, and
+    free-text search over published insights (ADR-0013); deterministic FAQ
     fallback from the evidence payload when no chat key is configured.
 13. **`/notifications`** — insight lifecycle events + new-insight digest (eve schedule,
     stretch).

@@ -37,7 +37,8 @@ datasources (ADR-0010)
         ▼ typed Insight[]
   server/ express API (CONTRACTS §5–§7) + dataset registry
         ├──▶ Vite UI (RTL fa, 14 pages) — merchant + dataset switchers
-        └──▶ /eve → eve agent «تحلیلگر بینش» (agent/, 5 read-only tools)
+        └──▶ /eve → eve agent «تحلیلگر بینش» (agent/, 8 read-only tools;
+            BM25 knowledge corpus over docs/ + insight search — ADR-0013)
 ```
 
 One-directional: source → provider → ETL → DB → engine → API/agent → UI.
@@ -50,10 +51,11 @@ Numbers come only from the deterministic engine (ADR-0004); the LLM writes prose
 | `src/lib/engine/` | metrics (16 canonical ids), segment compiler, wilson/shift-share/mix-adjust, impact F-01..F-04, cohorts, detector runner + 12 detectors |
 | `src/lib/types.ts` | CONTRACTS mirror (Insight, SegmentFilter, manifest) |
 | `server/` | API + dataset registry + zarinpal-live provider |
-| `agent/` | eve analyst agent (instructions, 5 tools, channel) |
+| `agent/` | eve analyst agent (instructions, 8 tools, 2 skills, model chain, channel) |
+| `src/lib/search/` | Persian tokenizer, Okapi BM25, RRF, docs knowledge corpus, insight search (ADR-0013) |
 | `scripts/` | etl / seed / detect / smoke |
-| `tests/` | 25 tests: ETL fixtures, engine math, API contracts, live provider |
-| `docs/` | vendored project docs (spec, ADRs 0001–0012, contracts, catalog, profiling) |
+| `tests/` | 30 tests: ETL fixtures, engine math, API contracts, live provider, search |
+| `docs/` | vendored project docs (spec, ADRs 0001–0013, contracts, catalog, profiling) |
 | `data/seed.db.gz.*` | committed dataset parts (<100MB each, ADR-0012) |
 
 ## Honesty rules baked in

@@ -126,7 +126,33 @@ Shared core: canonical model (ADR-0002), manifest write, eligibility views (ADR-
 - [ ] Final: fresh clone in clean dir runs <2 min; vendor `docs/` into the repo for
       judges; tag.
 
-## Stretch (only after Task 9 green)
+### Task 10 — agentic eve search: knowledge corpus + insight retrieval (ADR-0013) ✅ done 2026-08-22
+- [x] `src/lib/search/` — Persian normalize/tokenize, Okapi BM25, RRF (liara port,
+      unit tests on hand cases incl. ZWNJ/Arabic-yeh/Persian-digit normalization).
+- [x] Knowledge corpus over `docs/` (adr/specs/research/INSIGHT-CATALOG/CONTRACTS;
+      plans + demo excluded), heading-chunked in-memory at first use with
+      section anchors; corpus test warms against the real tree.
+- [x] `agent/tools/`: `search_knowledge`, `read_knowledge`, `search_insights`
+      (merchant-scoped, RRF title/body fusion, deep links `/insights/:id`).
+- [x] `agent/lib/model-chain.ts` + `agent.ts`: CHAT_PROVIDER/CHAT_MODEL_CHAIN
+      fallback chain (bench 5 min); default gateway string when no provider env.
+- [x] `agent/skills/` (knowledge-search, insight-hunting) + instructions.md
+      search-first rules with «منابع» citations; golden rules unchanged.
+- [x] Ask page renders assistant turns as markdown (clickable citations/deep links);
+      browser-verified desktop + 375 px RTL (DOM-verified: 3 live `/insights/…`
+      links, no horizontal overflow at 375 px; pixel inspection unavailable —
+      no vision model configured).
+- **Notes (deviations/fixes):**
+  - eve builds freeze `model` at build time — `agent:build` must run with the
+    provider env present (summary recorded `zai/glm-5.2` from a keyless build).
+  - Task 7 `readReply` bug found & fixed: it parsed a `parts[]` shape eve 0.44
+    never emits (`message.completed{message:string}` / `message.appended`
+    `{messageDelta}`), so every live agent reply silently degraded to the FAQ
+    fallback.
+  - `.env` (provider keys, liara-copied) is gitignored; without any provider env
+    the agent still boots on the gateway default — judges' zero-config path intact.
+
+## Stretch (only after Task 10 green)
 P1 detectors (I-10…I-30 table), P2 showpieces (I-35…I-39), eve schedules daily digest
 (GA-style alerts, ADR-0011 §6), operator persona extras (I-32/I-33).
 

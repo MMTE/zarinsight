@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SparklesIcon, SendHorizontalIcon } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Input } from '../components/Input';
 import { Badge } from '../components/Badge';
 import { PageHeader, SectionHeading } from '../components/analytics/PageHeader';
@@ -95,15 +97,26 @@ export function Ask() {
               یک سؤال بنویسید یا از پیشنهادها شروع کنید. مثلاً: «چرا نرخ موفقیت ژوئن افت کرد؟»
             </p>
           )}
-          {turns.map((t, i) => (
-            <div key={i} dir="rtl"
-              className={`rounded-xl px-3.5 py-2.5 text-[13px] leading-7 ${
-                t.role === 'user'
-                  ? 'ml-8 bg-pal-600 text-white'
-                  : 'mr-8 bg-gray-50 text-gray-900'}`}>
-              {t.text}
-            </div>
-          ))}
+          {turns.map((t, i) =>
+            t.role === 'user' ? (
+              <div key={i} dir="rtl"
+                className="ml-8 rounded-xl bg-pal-600 px-3.5 py-2.5 text-[13px] leading-7 text-white">
+                {t.text}
+              </div>
+            ) : (
+              // Markdown so agent citations (docs deep links, /insights/:id)
+              // are clickable — ADR-0013.
+              <div key={i} dir="rtl"
+                className="mr-8 rounded-xl bg-gray-50 px-3.5 py-2.5 text-[13px] leading-7 text-gray-900
+                  [&_a]:break-all [&_a]:text-pal-600 [&_a]:underline
+                  [&_ul]:list-disc [&_ul]:pr-5 [&_ol]:list-decimal [&_ol]:pr-5
+                  [&_li]:mb-0.5 [&_p]:mb-1.5 [&_p:last-child]:mb-0
+                  [&_code]:rounded [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:text-[12px]
+                  [&_strong]:font-semibold">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{t.text}</ReactMarkdown>
+              </div>
+            ),
+          )}
           {busy && <LoadingState steps={loadingSteps} />}
           {notFound && (
             <InsufficientDataState
@@ -154,22 +167,36 @@ async function readReply(body: ReadableStream<Uint8Array>, question: string): Pr
     raw += decoder.decode(value, { stream: true });
     if (raw.includes('"type":"turn.completed"') || raw.includes('MODEL_CALL_FAILED')) break;
   }
-  const events = raw.split('\n').filter((l) => l.startsWith('{')).map((l) => JSON.parse(l));
-  const texts: string[] = [];
-  for (const e of events) {
-    if (e?.type === 'error' || e?.data?.code === 'MODEL_CALL_FAILED') {
+  // NDJSON; skip a malformed/truncated tail line instead of failing the turn.
+  const events = raw.split('\n').filter((l) => l.startsWith('{'))
+    .flatMap((l) => {
+      try { return [JSON.parse(l) as EveEvent]; } catch { return []; }
+    });
+  // eve 0.44 protocol: the full assistant message arrives as a string on
+  // message.completed; message.appended carries per-step messageDelta chunks.
+  let reply = '';
+  for (const ev of events) {
+    if (ev.type === 'error' || ev.data?.code === 'MODEL_CALL_FAILED') {
       throw new Error('model-unconfigured');
     }
-    const parts = e?.data?.message?.parts ?? e?.data?.parts;
-    if (Array.isArray(parts)) {
-      for (const p of parts) {
-        if (p?.type === 'text' && typeof p.text === 'string' && p.text !== question
-          && !texts.includes(p.text)) texts.push(p.text);
+    if (ev.type === 'message.completed' && typeof ev.data?.message === 'string') {
+      reply = ev.data.message;
+    }
+  }
+  if (!reply) {
+    for (const ev of events) {
+      if (ev.type === 'message.appended' && typeof ev.data?.messageDelta === 'string') {
+        reply += ev.data.messageDelta;
       }
     }
   }
-  if (!texts.length) throw new Error('empty-reply');
-  return texts.join('\n');
+  if (!reply.trim() || reply.trim() === question.trim()) throw new Error('empty-reply');
+  return reply;
+}
+
+interface EveEvent {
+  type?: string;
+  data?: { code?: string; message?: string; messageDelta?: string };
 }
 
 /** Deterministic FAQ from live insight payloads (spec §4.12 fallback). */
