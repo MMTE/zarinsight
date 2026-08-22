@@ -1,0 +1,43 @@
+{
+  "id": "challenge-2026h1",
+  "label": "challenge-2026h1",
+  "provider": "csv-attempts",
+  "grain": "attempt",
+  "merchantScope": "portfolio",
+  "availableFields": [
+    "session_key",
+    "try_seq",
+    "terminal_key",
+    "merchant_key",
+    "category_id",
+    "category_title",
+    "amount",
+    "adjusted_fee",
+    "session_status",
+    "try_status",
+    "switch_response_code",
+    "psp_code",
+    "issuer_bank_code",
+    "payer_card_key",
+    "verify_type",
+    "init_time_ms",
+    "verify_time_ms",
+    "created_at",
+    "try_created_at",
+    "verified_at",
+    "settled_at"
+  ],
+  "dateRange": [
+    "2026-01-01",
+    "2026-06-30"
+  ],
+  "counts": {
+    "rows": 2213289,
+    "sessions": 2062839,
+    "merchants": 343,
+    "psps": 8,
+    "cards": 402173
+  },
+  "builtAt": "2026-08-22T01:10:56.279Z",
+  "sourceSha256": "2e04a0606153487e900df111605bb8a02797c1a3b9fed2454b1e95f6d1bbe882"
+}
