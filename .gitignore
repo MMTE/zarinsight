@@ -30,3 +30,7 @@ data/*
 other_challenge_data.csv
 *.sqlite
 *.sqlite-*
+
+# eve build artifacts
+.eve/
+.output/
