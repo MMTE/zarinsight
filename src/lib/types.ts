@@ -45,9 +45,8 @@ export type MetricId =
   | 'revenue' | 'demand_sessions' | 'success_rate' | 'capture_rate'
   | 'unverified_capture_rate' | 'unverified_capture_irr'
   | 'attempt_success_rate' | 'avg_success_amount' | 'fee_index' | 'retry_rate'
-  | 'repeat_card_rate' | 'returning_session_share'
   | 'p95_verify_latency' | 'p95_init_latency' | 'concentration_top5'
-  | 'recoverable_irr';
+  | 'concentration_top_decile' | 'recoverable_irr';
 
 export type AmountBand = 'q1' | 'q2' | 'q3' | 'q4' | 'top10';
 

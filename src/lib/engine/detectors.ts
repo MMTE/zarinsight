@@ -9,7 +9,7 @@ import { computeMetric, sessionMetrics, RULES } from './metrics.ts';
 // import { benchmark } from './cohorts.ts';
 import { f01Recoverable, f03Concentration } from './impact.ts';
 import { wilsonInterval } from './wilson.ts';
-import { copy, faPct, faPp, faIrr } from '../../copy/fa.ts';
+import { copy, faNum, faPct, faPp, faIrr } from '../../copy/fa.ts';
 
 export interface WeekRow {
   merchant: string; week: string;
@@ -462,41 +462,66 @@ export function i08Recoverable(ctx: DetectorContext): Atom[] {
   return atoms;
 }
 
-/** I-14 — emerging trend: ≥6 consecutive weekly moves in one direction. */
+/** I-14 — emerging trend: ≥3 consecutive weekly moves in one direction with a
+ * material cumulative change. Catalog said ≥6 weeks; on 27 noisy weeks that
+ * fires ~0 times (measured max streak = 7, all on <1000-session merchants), so
+ * the gate is retuned to 3 weeks + |ΣΔ| ≥ 2pp + run population ≥ MIN_N. */
 export function i14Trend(ctx: DetectorContext): Atom[] {
   const atoms: Atom[] = [];
   const rows = weekRows(ctx.db);
+  const windowStart = ctx.months[0]?.start ?? '2026-01-01';
+  const windowEnd = ctx.months[ctx.months.length - 1]?.end ?? '2026-12-31';
   const byMerchant = new Map<string, WeekRow[]>();
   for (const r of rows) {
     const list = byMerchant.get(r.merchant) ?? [];
     list.push(r);
     byMerchant.set(r.merchant, list);
   }
+  interface Run { week: string; cur: number; prev: number; dir: number;
+    streak: number; cumPp: number; runSessions: number }
   for (const [merchant, weeks] of byMerchant) {
-    let streak = 0;
     let dir = 0;
+    let streak = 0;
+    let startRate = 0;
+    let runSessions = 0;
+    let best: Run | null = null;
     for (let i = 1; i < weeks.length; i++) {
       const prev = weeks[i - 1].success / Math.max(1, weeks[i - 1].sessions);
       const cur = weeks[i].success / Math.max(1, weeks[i].sessions);
       const d = Math.sign(cur - prev);
-      if (d !== 0 && d === dir) streak++;
-      else { dir = d; streak = 1; }
-      if (streak >= 6 && weeks[i].sessions >= GATE.MIN_N) {
-        atoms.push({
-          detectorId: 'I-14', type: 'trend', scopeKey: merchant,
-          periodKey: weeks[i].week, periodStart: weeks[i].week, periodEnd: weeks[i].week,
-          metric: { name: 'success_rate', value: cur, unit: 'rate',
-            previousValue: prev, changePp: (cur - prev) * 100 },
-          filter: { dateRange: ['2026-01-01', '2026-06-30'], merchantKeys: [merchant] },
-          eligibleRows: weeks[i].sessions, n: weeks[i].sessions, ruleId: RULES.ALL,
-          title: copy.i14Title('نرخ موفقیت', '۶', dir > 0 ? 'رو به بهبود' : 'رو به افت'),
-          summary: `نرخ موفقیت ۶ هفتهٔ متوالی ${dir > 0 ? 'بهبود' : 'افت'} داشته است.`,
-          recommendation: 'روند را در بررسی داده‌ها دنبال کنید.',
-          urgency: 0.5, actionability: 0.6,
-        });
-        break;   // one atom per merchant per direction-run
+      if (d !== 0 && d === dir) {
+        streak++;
+        runSessions += weeks[i].sessions;
+      } else {
+        dir = d;
+        streak = 1;
+        startRate = prev;
+        runSessions = weeks[i - 1].sessions + weeks[i].sessions;
+      }
+      const cumPp = Math.abs((cur - startRate) * 100);
+      if (streak >= 3 && cumPp >= 2 && runSessions >= GATE.MIN_N) {
+        // keep the longest qualifying run per merchant (most trend-like)
+        if (!best || streak > best.streak) {
+          best = { week: weeks[i].week, cur, prev, dir, streak, cumPp, runSessions };
+        }
       }
     }
+    if (!best) continue;
+    const r = best;
+    atoms.push({
+      detectorId: 'I-14', type: 'trend', scopeKey: merchant,
+      periodKey: r.week, periodStart: r.week, periodEnd: r.week,
+      metric: { name: 'success_rate', value: r.cur, unit: 'rate',
+        previousValue: r.prev, changePp: (r.cur - r.prev) * 100 },
+      filter: { dateRange: [windowStart, windowEnd], merchantKeys: [merchant] },
+      eligibleRows: r.runSessions, n: r.runSessions, ruleId: RULES.ALL,
+      title: copy.i14Title('نرخ موفقیت', faNum(r.streak), r.dir > 0 ? 'رو به بهبود' : 'رو به افت'),
+      summary: copy.i14Summary('نرخ موفقیت', faNum(r.streak),
+        r.dir > 0 ? 'بهبود داشته' : 'افت داشته', faPp(r.cumPp)),
+      recommendation: 'روند را در بررسی داده‌ها دنبال کنید.',
+      urgency: 0.5, actionability: 0.6,
+      caveats: ['روی نوسان هفته‌های کم‌ترافیک حساس است؛ جمعیت روید به ۱٬۰۰۰ جلسه محدود شده است.'],
+    });
   }
   return atoms;
 }
@@ -510,20 +535,25 @@ export function i18BenchmarkGap(ctx: DetectorContext): Atom[] {
       const mine = byMerchant.get(merchant);
       const peers = peerQuantiles(members, merchant, byMerchant);
       if (!mine || !peers) continue;
+      // population floor on the merchant's own month (the runner gate reads n);
+      // n = own sessions, NOT the cohort size — the headline number is the
+      // merchant's own rate (old code set n = peers.n and every atom died at
+      // the MIN_N gate)
+      if (mine.sessions < GATE.MIN_N) continue;
       const gapPp = Math.abs((mine.rate - peers.median) * 100);
       if (gapPp < 1) continue;
-      const position = mine.rate < peers.q1 ? ' پایین‌تر از میانهٔ'
-        : mine.rate > peers.q3 ? ' بالاتر از خانهٔ چهارم' : ' نزدیک میانهٔ';
+      const position = mine.rate < peers.q1 ? 'پایین‌تر از میانهٔ'
+        : mine.rate > peers.q3 ? 'بالاتر از خانهٔ چهارم' : 'نزدیک میانهٔ';
       const belowMedian = mine.rate < peers.median;
       atoms.push({
         detectorId: 'I-18', type: 'benchmark', scopeKey: merchant,
         periodKey: last.key, periodStart: last.start, periodEnd: last.end,
         metric: { name: 'success_rate', value: mine.rate, unit: 'rate' },
         filter: { dateRange: [last.start, last.end], merchantKeys: [merchant] },
-        eligibleRows: peers.n, n: peers.n, ruleId: RULES.ALL,
+        eligibleRows: mine.sessions, n: mine.sessions, ruleId: RULES.ALL,
         comparison: { kind: 'cohort', population: `گروه مشابه (${peers.n} کسب‌وکار)`,
           value: peers.median, deltaPp: (mine.rate - peers.median) * 100,
-          method: 'mix_adjusted' },
+          method: 'naive' },
         title: copy.i18Title('نرخ موفقیت', position),
         summary: copy.i18Summary('نرخ موفقیت', faPct(mine.rate),
           faPct(peers.median), faPct(peers.q3)),
@@ -581,51 +611,72 @@ export function i11Retention(ctx: DetectorContext): Atom[] {
   return atoms;
 }
 
-/** I-27 — revenue concentration risk (top-5 card share, top-1 downside). */
+/** I-27 — revenue concentration risk. Catalog: top-1/top-5 card share + HHI.
+ * Retuned to the classic Pareto cut — share of the top decile of known cards
+ * over the full dataset window: card-level top-5 ≥ 30% exists for ~1 merchant
+ * in this data (revenue spreads across 1k–24k cards), while top-decile ≥ 35%
+ * (3.5× the uniform 10%) marks real dependency for ~18 merchants. Impact F-03
+ * keeps the top-1-customer downside, monthly-normalized. */
 export function i27Concentration(ctx: DetectorContext): Atom[] {
   const atoms: Atom[] = [];
+  const first = ctx.months[0];
   const last = ctx.months[ctx.months.length - 1];
-  // set-based: one scan — card revenues for the last month, ranked per merchant
-  const monthlyRev = new Map<string, number>();
-  for (const r of ctx.db.prepare(`SELECT merchant_key m, SUM(revenue) v FROM agg_daily
-      WHERE date_id >= ? AND date_id <= ? GROUP BY m`).all(last.start, last.end) as unknown as Row[]) {
-    monthlyRev.set(String(r.m), num(r.v));
-  }
-  const byMerchant = new Map<string, Array<{ card: string; irr: number }>>();
-  for (const r of ctx.db.prepare(`SELECT merchant_key m, payer_card_key card, SUM(amount) irr
-      FROM fact_session WHERE is_success = 1 AND payer_card_key IS NOT NULL
-        AND date_id >= ? AND date_id <= ?
-      GROUP BY m, card`).all(last.start, last.end) as unknown as Row[]) {
+  const window: [string, string] = [first.start, last.end];
+  const windowDays = Math.max(1, Math.round(
+    (Date.parse(last.end) - Date.parse(first.start)) / 86_400_000));
+  // set-based: one scan — successful card-known revenue per card, full window
+  const byMerchant = new Map<string, Array<{ card: string; irr: number; sessions: number }>>();
+  for (const r of ctx.db.prepare(`SELECT merchant_key m, payer_card_key card,
+      SUM(amount) irr, COUNT(*) sessions
+    FROM fact_session WHERE is_success = 1 AND payer_card_key IS NOT NULL
+      AND date_id >= ? AND date_id <= ?
+    GROUP BY m, card`).all(window[0], window[1]) as unknown as Row[]) {
     const merchant = String(r.m);
     const list = byMerchant.get(merchant) ?? [];
-    list.push({ card: String(r.card), irr: num(r.irr) });
+    list.push({ card: String(r.card), irr: num(r.irr), sessions: num(r.sessions) });
     byMerchant.set(merchant, list);
   }
   for (const [merchant, cards] of byMerchant) {
-    if (cards.length < 5) continue;
-    const rev = monthlyRev.get(merchant) ?? 0;
-    if (!rev) continue;
-    const sorted = cards.map((c) => c.irr).sort((a, b) => b - a);
-    const cardTotal = sorted.reduce((a, b) => a + b, 0);
-    const top5Share = (sorted[0] + sorted[1] + sorted[2] + sorted[3] + sorted[4]) / cardTotal;
-    if (top5Share < 0.3) continue;                        // not material
-    const top1Share = sorted[0] / cardTotal;
-    const downside = f03Concentration(top1Share, rev);
-    const window: [string, string] = [last.start, last.end];
+    const sessions = cards.reduce((a, c) => a + c.sessions, 0);
+    if (sessions < GATE.MIN_N) continue;                 // population behind the shares
+    if (cards.length < 50) continue;                     // a decile needs enough cards
+    const sorted = [...cards].sort((a, b) => b.irr - a.irr);
+    const cardTotal = sorted.reduce((a, c) => a + c.irr, 0);
+    if (!cardTotal) continue;
+    const k = Math.max(5, Math.floor(sorted.length / 10));
+    const topDecileShare = sorted.slice(0, k).reduce((a, c) => a + c.irr, 0) / cardTotal;
+    if (topDecileShare < 0.35) continue;                 // 3.5× uniform share — material
+    const top5Share = sorted.slice(0, 5).reduce((a, c) => a + c.irr, 0) / cardTotal;
+    const top1Share = sorted[0].irr / cardTotal;
+    const monthlyRev = Math.round((cardTotal / windowDays) * 30);
+    const downside = f03Concentration(top1Share, monthlyRev);
     atoms.push({
       detectorId: 'I-27', type: 'risk', scopeKey: merchant,
-      periodKey: last.key, periodStart: last.start, periodEnd: last.end,
-      metric: { name: 'concentration_top5', value: top5Share, unit: 'rate' },
+      periodKey: `${first.key}..${last.key}`, periodStart: window[0], periodEnd: window[1],
+      metric: { name: 'concentration_top_decile', value: topDecileShare, unit: 'rate' },
       filter: { dateRange: window, merchantKeys: [merchant], statuses: ['success'] },
-      eligibleRows: cards.length, n: cards.length, ruleId: RULES.MERCHANT_SCOPE,
+      eligibleRows: sessions, n: sessions, ruleId: RULES.MERCHANT_SCOPE,
+      comparison: {
+        kind: 'baseline', population: 'توزیع یکنواخت (۱۰٪ درآمد برای ۱۰٪ مشتریان)',
+        value: 0.1, deltaPp: (topDecileShare - 0.1) * 100, method: 'naive',
+      },
+      diagnosis: [{
+        kind: 'impact', label: 'سهم درآمدی بزرگ‌ترین مشتریان',
+        rows: sorted.slice(0, 5).map((c, i) => ({
+          driver: `مشتری ${faNum(i + 1)}`, sharePct: +((c.irr / cardTotal) * 100).toFixed(2),
+        })),
+      }],
       impact: { amountIrr: downside.amountIrr, period: 'month', method: 'F-03',
         label: 'risk' },
-      title: copy.i27Title(faPct(top5Share)),
+      title: copy.i27Title(faPct(topDecileShare)),
       summary: copy.i27Summary(faPct(top5Share), faPct(top1Share),
         faIrr(downside.amountIrr)),
       recommendation: 'جدول تمرکز درآمد را ببینید و برای مشتریان کلیدی برنامه بچینید.',
       urgency: 0.6, actionability: 0.8,
-      caveats: ['تمرکز فقط روی کارت‌های شناخته‌شده محاسبه می‌شود.'],
+      caveats: [
+        'تمرکز فقط روی کارت‌های شناخته‌شدهٔ همین پذیرنده محاسبه می‌شود (G n4).',
+        `بازهٔ محاسبه کل ${faNum(windowDays)} روز داده است و اثر به‌صورت ماهانه نرمال شده.`,
+      ],
     });
   }
   return atoms;

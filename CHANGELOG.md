@@ -6,6 +6,27 @@ and this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+### Fixed — zero-emitter detectors retuned (I-14 / I-18 / I-27)
+- **I-18 benchmark-gap** never published: it set `n` (the runner's population
+  gate) to the *cohort size* (2–26 peers) instead of the merchant's own
+  sessions, so every atom died at the MIN_N=1000 gate. Now `n` = own June
+  sessions (floor 1,000), peers ≥ 2 kept, comparison honestly relabeled
+  `naive`. → 20 insights.
+- **I-14 trend** required ≥ 6 consecutive same-direction weekly moves — on 27
+  noisy weeks the measured max streak across 343 merchants is 7 (all on
+  <1,000-session merchants), i.e. it could never fire honestly. Retuned to
+  ≥ 3 consecutive weekly moves with cumulative |ΣΔ| ≥ 2 pp and ≥ 1,000
+  sessions summed over the run; longest qualifying run wins. → 24 insights.
+- **I-27 concentration** gated on card-level top-5 share ≥ 30% of *one month*,
+  which holds for ~1 merchant in this data (revenue spreads across 1k–24k
+  known cards per merchant). Retuned to the catalog's Pareto view:
+  top-decile-of-cards share over the full window ≥ 35% (3.5× the uniform
+  10%), ≥ 1,000 successful card-known sessions, ≥ 50 cards; F-03 top-customer
+  downside monthly-normalized; top-5 customers listed as diagnosis rows.
+  → 18 insights.
+- `scripts/smoke.mjs` now fails when I-14 < 15, I-18 < 15 or I-27 < 10;
+  INSIGHT-CATALOG entries updated with the measured rationale.
+
 ### Added — agentic eve search & insights (ADR-0013, plan Task 10)
 - `src/lib/search/` — retrieval primitives ported from the liara deployment:
   Persian normalization/tokenization (ZWNJ, Arabic yeh/kaf, digit folding),

@@ -20,9 +20,13 @@ const db = new Database(join(repoRoot, 'data/datasets/challenge-2026h1/db.sqlite
 const per = db.prepare('SELECT detector_id, COUNT(*) c FROM insights GROUP BY detector_id').all();
 const counts = Object.fromEntries(per.map((r) => [r.detector_id, r.c]));
 const required = ['I-01', 'I-02', 'I-03', 'I-04', 'I-05', 'I-06', 'I-07', 'I-08', 'I-11'];
+// retuned zero-emitters (see CHANGELOG): must publish non-trivial volumes
+const requiredMin = { 'I-14': 15, 'I-18': 15, 'I-27': 10 };
 const missing = required.filter((id) => !counts[id]);
-if (missing.length) {
-  console.error('[smoke] zero-insight detectors:', missing.join(', '), JSON.stringify(counts));
+const thin = Object.entries(requiredMin).filter(([id, min]) => (counts[id] ?? 0) < min)
+  .map(([id, min]) => `${id}<${min}`);
+if (missing.length || thin.length) {
+  console.error('[smoke] zero/thin detectors:', [...missing, ...thin].join(', '), JSON.stringify(counts));
   process.exit(1);
 }
 console.log('[smoke] detectors', JSON.stringify(counts));

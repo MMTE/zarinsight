@@ -51,7 +51,9 @@ export const copy = {
   i08Summary: (gap: string, irr: string) =>
     `فاصله با میانهٔ گروه مشابه ${gap}؛ با سقف ۱۰ واحد درصد، ${irr} برآورد فرصت است، نه درآمد قطعی.`,
   i14Title: (metric: string, n: string, dir: string) =>
-    `${metric} ${n} دورهٔ متوالی ${dir} است`,
+    `${metric} ${n} هفتهٔ متوالی ${dir} است`,
+  i14Summary: (metric: string, n: string, dirPast: string, cum: string) =>
+    `${metric} در ${n} هفتهٔ پیاپی ${dirPast}؛ مجموع جابه‌جایی ${cum}. این یک روند تازه است، نه نوسان معمول هفته‌ها.`,
   i18Title: (metric: string, pos: string) =>
     `${metric} شما ${pos} گروه مشابه است`,
   i18Summary: (metric: string, mine: string, med: string, q3: string) =>
@@ -59,9 +61,9 @@ export const copy = {
   i11Title: (ret: string) => `${ret} پرداخت‌های موفق از مشتریان بازگشتی است`,
   i11Summary: (repeat: string, ret: string) =>
     `${repeat} کارت‌ها دوباره پرداخت کرده‌اند؛ تحلیل فقط روی کارت‌های شناخته‌شدهٔ همین پذیرنده تعریف شده است.`,
-  i27Title: (top5: string) => `${top5} درآمد موفق به ۵ مشتری اول وابسته است`,
+  i27Title: (topDecile: string) => `${topDecile} درآمد موفق به ۱۰٪ مشتریان بزرگ وابسته است`,
   i27Summary: (top5: string, top1: string, irr: string) =>
-    `سهم مشتری اول ${top1}. از دست دادنش یعنی ${irr} در ماه در معرض.`,
+    `سهم ۵ مشتری اول ${top5} و سهم مشتری اول ${top1}. از دست دادن مشتری اول یعنی ${irr} در ماه در معرض.`,
   concentrationChip: 'تمرکز درآمد',
   recoverableChip: 'برآورد فرصت',
   riskChip: 'ریسک',

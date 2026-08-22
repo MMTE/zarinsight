@@ -80,8 +80,12 @@ patterns §4), Insight contract (CONTRACTS.md).
 
 ### I-14 Emerging trend — `TREND`
 - **Q:** persistent direction, not one-off anomaly?
-- **Detect:** ≥ 6 consecutive weekly moves in the same direction on success rate /
-  revenue / repeat rate, magnitude ≥ 1 pp (rates) or ≥ 5 % (revenue).
+- **Detect:** ≥ 3 consecutive weekly moves in the same direction on success
+  rate, cumulative |ΣΔ| ≥ 2 pp, and ≥ 1,000 sessions summed over the run.
+  *(Retuned — the original ≥ 6 consecutive weeks is statistically unreachable
+  here: measured max streak across 343 merchants is 7, all on <1,000-session
+  merchants. Materiality now rides on the cumulative change + population
+  floor instead of streak length alone.)*
 - **Action:** trend explorer with the streak visualized.
 
 ### I-18 Industry benchmark gap — `BENCHMARK`
@@ -102,11 +106,17 @@ patterns §4), Insight contract (CONTRACTS.md).
 
 ### I-27 Revenue concentration risk — `RISK`
 - **Q:** dependency on few customers/segments.
-- **Compute:** top-1/top-5 customer share of successful revenue (card-level), HHI; plus
-  merchant-level view for the operator persona. Demo fact: M156 = 38 % revenue from
-  2.7 % sessions; M250 = 51 % sessions, 8 % revenue (→ I-28 overlap).
-- **Impact:** downside simulation: top-customer loss = X ریال/month.
+- **Compute:** share of successful card-known revenue held by the **top decile
+  of known cards**, over the full dataset window (Pareto cut; uniform = 10%).
+  Gate: top-decile ≥ 35% (3.5× uniform), ≥ 1,000 successful card-known
+  sessions, ≥ 50 distinct cards. Top-5/top-1 shares and the F-03 top-customer
+  downside (monthly-normalized) ride along in summary/impact.
+  *(Retuned — card-level top-5 ≥ 30% exists for ~1 merchant in this data:
+  revenue spreads across 1k–24k cards per merchant, so the sharper top-5 cut
+  cannot publish a meaningful volume here.)*
+- **Impact:** downside simulation: top-customer loss = X ریال/month (F-03).
 - **Action:** concentration table.
+
 
 ### I-36 Success-rate driver analysis — `DIAGNOSTIC`
 - **Q:** what explains an aggregate success change?
