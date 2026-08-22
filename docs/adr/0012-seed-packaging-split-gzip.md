@@ -10,7 +10,7 @@ dims + 5 aggregates + eligibility views). `gzip -9` yields 169 MB — above GitH
 promise: judges clone and run with no CSV).
 
 ## Decision
-Ship the seed as **split gzip parts** `data/seed.db.gz.00 … .07` (each ≤25 MB actual,
+Ship the seed as **split gzip parts** `data/seed.db.gz.000 … .007` (each ≤25 MB actual,
 bounded by 90 MB split size). Each part is an independent gzip member; `scripts/seed.mjs`
 streams them in lexical order through gunzip into the dataset dir — byte-for-byte
 restoration is verified (cmp against the ETL output). A legacy single-file

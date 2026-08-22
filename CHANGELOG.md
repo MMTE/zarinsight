@@ -6,6 +6,14 @@ and this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+### Changed
+- 2026-08-22 — **Seed repacked with the full engine output**: the 8 gzip
+  parts now restore a db that already carries the 392 published insights
+  (incl. retuned I-14/I-18/I-27) and the precomputed benchmark_cache —
+  `npm run seed` alone serves benchmarks at ~1 ms, no detect step needed
+  for the judge quickstart (verify: byte-identical restore + /api/benchmarks 200).
+
+
 ### Fixed — zero-emitter detectors retuned (I-14 / I-18 / I-27)
 - **I-18 benchmark-gap** never published: it set `n` (the runner's population
   gate) to the *cohort size* (2–26 peers) instead of the merchant's own

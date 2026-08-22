@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Decompress the committed seed into the demo dataset dir (ADR-0005 judge quickstart).
-// The seed ships as split gzip parts data/seed.db.gz.00… (each <100 MB, ADR-0012);
+// The seed ships as split gzip parts data/seed.db.gz.000… (each <100 MB, ADR-0012);
 // each part is an independent gzip stream, restored in order (byte-for-byte verified).
 import { createReadStream, existsSync, createWriteStream, readdirSync } from 'node:fs';
 import { mkdirSync } from 'node:fs';
