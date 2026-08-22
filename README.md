@@ -11,14 +11,14 @@ impact, exposes the evidence, and recommends the next action.
 ## Quickstart (judges — under 2 minutes)
 
 ```bash
-git clone <repo> && cd zarinsight
+git clone https://github.com/MMTE/zarinsight && cd zarinsight
 npm install
 npm run seed        # decompress the committed dataset (8 gzip parts, ~5s)
 npm run dev         # dev.sh: build+start eve agent on :2319, health-wait, vite on :5173
 ```
 
 Open **http://localhost:5173** — app + API + agent on one origin.
-No CSV, no DB server. `npm test` runs the full suite (30 tests).
+No CSV, no DB server. `npm test` runs the full suite (32 tests).
 For live agent replies set a provider key in `.env` (e.g. `CHAT_PROVIDER=avalai`
 + `AVALAI_API_KEY`, or `AI_GATEWAY_API_KEY`) — without one, `/ask` degrades to
 deterministic FAQ answers. Keys never enter the repo (`.env` gitignored).
