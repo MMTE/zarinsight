@@ -5,7 +5,7 @@ import express from 'express';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
-import { Registry } from './registry.mts';
+import { Registry } from './registry.mjs';
 import { computeMetric, sessionMetrics, RULES } from '../src/lib/engine/metrics.ts';
 import { sessionWhere, sessionFrom } from '../src/lib/engine/segment.ts';
 import { benchmark } from '../src/lib/engine/cohorts.ts';

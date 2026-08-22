@@ -146,13 +146,13 @@ export const api = {
 
 export function kpisFromOverview(o: OverviewResponse): Kpi[] {
   return [
-    { id: 'revenue', label: 'درآمد موفق', value: faIrr(o.kpis.revenue),
+    { id: 'revenue', label: 'درآمد موفق', value: faIrr(o.kpis.revenue), delta: undefined,
       deltaUnit: 'percent', positiveWhen: 'up', note: `${fa(o.kpis.sessions)} جلسه پرداخت` },
-    { id: 'success-rate', label: 'نرخ موفقیت', value: `${fa(o.kpis.successRate * 100)}٪`,
+    { id: 'success-rate', label: 'نرخ موفقیت', value: `${fa(o.kpis.successRate * 100)}٪`, delta: undefined,
       deltaUnit: 'percent', positiveWhen: 'up', note: 'فقط Verified' },
-    { id: 'retry-rate', label: 'نرخ تلاش مجدد', value: `${fa(o.kpis.retryRate * 100)}٪`,
+    { id: 'retry-rate', label: 'نرخ تلاش مجدد', delta: undefined, value: `${fa(o.kpis.retryRate * 100)}٪`,
       deltaUnit: 'percent', positiveWhen: 'down', note: 'جلسه‌های چندتلاشی' },
-    { id: 'returning', label: 'سهم بازگشتی‌ها', value: `${fa(o.kpis.returningShare * 100)}٪`,
+    { id: 'returning', label: 'سهم بازگشتی‌ها', delta: undefined, value: `${fa(o.kpis.returningShare * 100)}٪`,
       deltaUnit: 'percent', positiveWhen: 'up', note: 'کارت‌های شناخته‌شده' },
   ];
 }

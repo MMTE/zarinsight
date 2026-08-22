@@ -24,4 +24,10 @@ async function apiMiddleware() {
 
 export default defineConfig({
   plugins: [react(), apiMiddleware()],
+  server: {
+    proxy: {
+      // ADR-0009/0011: eve agent child (built via `npm run agent:build`, started on :2319)
+      '/eve': { target: process.env.EVE_URL ?? 'http://127.0.0.1:2319', changeOrigin: false },
+    },
+  },
 })

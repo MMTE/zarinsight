@@ -4,19 +4,12 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
 
-export interface DatasetEntry {
-  id: string;
-  manifest: Record<string, unknown>;
-  dbPath: string;
-  db: Database.Database;
-}
-
 export class Registry {
-  private entries = new Map<string, DatasetEntry>();
-  private activeId: string;
-  private root: string;
+  entries = new Map();
+  activeId;
+  root;
 
-  constructor(root: string) {
+  constructor(root) {
     this.root = root;
     if (existsSync(root)) {
       for (const name of readdirSync(root)) {
@@ -39,21 +32,21 @@ export class Registry {
       : [...this.entries.keys()][0];
   }
 
-  list(): DatasetEntry[] {
+  list() {
     return [...this.entries.values()].sort((a, b) => a.id.localeCompare(b.id));
   }
 
-  active(): DatasetEntry {
-    return this.entries.get(this.activeId)!;
+  active() {
+    return this.entries.get(this.activeId);
   }
 
-  activate(id: string): boolean {
+activate(id) {
     if (!this.entries.has(id)) return false;
     this.activeId = id;
     return true;
   }
 
-  get(id: string): DatasetEntry | undefined {
+get(id) {
     return this.entries.get(id);
   }
 }
