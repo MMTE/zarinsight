@@ -10,7 +10,6 @@ import { business } from '../data/overview';
 import { useAnalysis } from '../contexts/AnalysisContext';
 import { LightbulbIcon, BellIcon } from 'lucide-react';
 const extraNav = [
-{ to: '/ask', label: 'جست‌وجوی تحلیلی', icon: LightbulbIcon },
 { to: '/notifications', label: 'تغییرات مهم', icon: BellIcon }];
 
 export function More() {
@@ -97,7 +96,7 @@ export function More() {
 
       <Card padding="none" elevation="flat" className="border-border-light">
         <ul className="divide-y divide-border-light">
-          {[...primaryNav.slice(2), ...secondaryNav, ...extraNav].map((item) =>
+          {[...primaryNav.slice(1), ...secondaryNav, ...extraNav].map((item) =>
           <li key={item.to}>
               <Link
               to={item.to}

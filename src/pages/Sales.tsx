@@ -37,7 +37,7 @@ export function Sales() {
   return (
     <div>
       <InvestigationBar />
-      <PageHeader title="فروش" description="عملکرد درآمد و پرداخت‌های موفق" />
+      
 
       <div className="space-y-6">
         <section aria-label="معیارهای فروش">

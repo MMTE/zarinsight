@@ -122,7 +122,7 @@ export function SideNav() {
         <nav className="mt-4 flex-1 overflow-y-auto px-3 pb-3" aria-label="بخش‌ها">
           <NavList items={primaryNav} label="گزارش‌ها" collapsed={collapsed} />
           <div className="mt-4">
-            <NavList items={secondaryNav} label="شفافیت داده" collapsed={collapsed} />
+            <NavList items={secondaryNav} label="بیشتر" collapsed={collapsed} />
           </div>
         </nav>
 

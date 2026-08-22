@@ -37,9 +37,7 @@ export function Payments() {
   return (
     <div>
       <InvestigationBar />
-      <PageHeader
-        title="پرداخت‌ها"
-        description="عملکرد پرداخت، مسیرها و رفتار تلاش‌های پرداخت" />
+      
       
 
       <div className="space-y-6">

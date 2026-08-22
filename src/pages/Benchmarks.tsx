@@ -47,9 +47,7 @@ export function Benchmarks() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="مقایسه با کسب‌وکارهای مشابه"
-        description="عملکرد کسب‌وکار شما در مقایسه با گروهی با شرایط مشابه" />
+      
       
 
       <Card padding="md" elevation="low" className="border-border-light">

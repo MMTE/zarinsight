@@ -77,7 +77,7 @@ export function Overview() {
     <div className="space-y-6">
       <PageHeader
         title="نمای کلی"
-        description={`در ${periodLabel}، ۳ موضوع مهم در داده‌های کسب‌وکار شما دیده شده است.`} />
+        description={`سه تغییر مهم ${periodLabel}.`} />
       
 
       <Card padding="lg" elevation="low" className="border-pal-200 bg-pal-50">

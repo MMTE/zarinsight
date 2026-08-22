@@ -91,19 +91,8 @@ function ProfileMenu() {
               <SettingsIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
               تنظیمات
             </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                navigate('/methodology');
-              }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-pal-600"
-            >
-              <LifeBuoyIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
-              روش تحلیل و شفافیت داده
-            </button>
-          </div>
+            
+                      </div>
           <div className="border-t border-slate-100 p-1.5">
             <button
               type="button"
@@ -172,7 +161,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
           className="order-last flex min-h-[40px] w-full items-center gap-2 rounded-lg border border-border-strong-light bg-gray-50 px-3 text-[13px] text-gray-600 transition-colors hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-pal-600 lg:order-none lg:w-auto lg:min-w-[280px] lg:flex-1"
         >
           <SearchIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>در داده‌ها جست‌وجو کنید یا سؤال بپرسید...</span>
+          <span>جست‌وجو در داده‌ها یا پرسش…</span>
         </button>
 
         {/* Left cluster (RTL end): analytics controls, notifications, profile */}

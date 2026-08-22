@@ -33,11 +33,6 @@ export function Customers() {
   return (
     <div>
       <InvestigationBar />
-      <PageHeader
-        title="مشتریان"
-        description="تکرار خرید، بازگشت مشتری و ارزش هر گروه از مشتریان"
-        actions={<DataCoverageBadge coverage={46} label="پوشش شناسه مشتری" />} />
-      
 
       <div className="space-y-6">
         <CoverageNotice>{coverageNotice}</CoverageNotice>
@@ -206,7 +201,7 @@ export function Customers() {
             title="برای این تحلیل داده کافی نداریم."
             description="برای محاسبه ارزش طول عمر، به تاریخچه بلندمدت‌تری از هر مشتری نیاز داریم. بازه فعلی داده سه ماه است."
             coverage={46}
-            onAction={() => navigate('/methodology')} />
+            onAction={() => navigate('/insights')} />
           
         </section>
 

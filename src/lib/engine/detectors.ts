@@ -141,7 +141,7 @@ export function i02RevenueDecomposition(ctx: DetectorContext): Atom[] {
         }],
         title: copy.i02Title(parts[0].label,
           faPct(Math.abs(total ? parts[0].v / total : 0), 0)),
-        summary: `تغییر ${faIrr(total)} عمدتاً از ${parts[0].label} است.`,
+        summary: `سهم هر عامل در ${faIrr(total)} تغییر بالا آمده؛ بیشترین سهم ${parts[0].label}.`,
         recommendation: 'به بزرگ‌ترین عامل، در بررسی داده‌ها ادامه دهید.',
         urgency: 0.5, actionability: 0.8,
         mergeKey: `anomaly|${merchant}|${b.month}`,
