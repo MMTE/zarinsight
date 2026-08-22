@@ -6,11 +6,43 @@ import { Button } from '../components/Button';
 import { PageHeader, SectionHeading } from '../components/analytics/PageHeader';
 import { BenchmarkTable } from '../components/analytics/BenchmarkTable';
 import { PrototypeNotice } from '../components/analytics/Notices';
-import { benchmarkNote, benchmarkRows, gaps, peerGroup, strengths } from '../data/benchmarks';
+import { benchmarkNote, gaps, peerGroup as mockPeerGroup, strengths } from '../data/benchmarks';
+import { benchmarkRows as mockRows } from '../data/benchmarks';
+import type { BenchmarkRow } from '../data/benchmarks';
+import { useEffect, useState } from 'react';
+import { useAnalysis } from '../contexts/AnalysisContext';
 import { formatNumber, formatToman } from '../utils/format';
 
 export function Benchmarks() {
   const navigate = useNavigate();
+  const { merchantKey } = useAnalysis();
+  const [live, setLive] = useState<BenchmarkRow[] | null>(null);
+  const [cohortSize, setCohortSize] = useState<number | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/benchmarks?merchantKey=${encodeURIComponent(merchantKey)}&metric=success_rate`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('no cohort'))))
+      .then((b2) => {
+        if (!alive) return;
+        setCohortSize(b2.cohortMerchants);
+        setLive([{
+          metric: 'نرخ موفقیت پرداخت',
+          you: Number((b2.merchantValue * 100).toFixed(1)),
+          median: Number((b2.median * 100).toFixed(1)),
+          topQuartile: Number((b2.q3 * 100).toFixed(1)),
+          unit: 'percent',
+          percentile: b2.merchantValue < b2.q1 ? 25 : b2.merchantValue < b2.median ? 50 : b2.merchantValue < b2.q3 ? 75 : 90,
+          higherIsBetter: true,
+          note: `گروه مشابه: ${b2.cohortMerchants} کسب‌وکار`,
+        }]);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [merchantKey]);
+
+  const benchmarkRows = live ?? mockRows;
+  const peerGroup = { ...mockPeerGroup, size: cohortSize ?? mockPeerGroup.size };
   const totalGap = gaps.reduce((sum, item) => sum + item.impact, 0);
 
   return (

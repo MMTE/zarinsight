@@ -10,7 +10,7 @@ import { BarCompareChart } from '../components/analytics/charts/BarCompareChart'
 import { PaymentFunnel } from '../components/analytics/charts/PaymentFunnel';
 import { CoverageNotice, InvestigationBar, PrototypeNotice } from '../components/analytics/Notices';
 import { useAnalysis } from '../contexts/AnalysisContext';
-import { insightsByIds } from '../data/insights';
+import { useLiveInsights } from '../lib/useLiveInsights';
 import {
   funnel,
   funnelNote,
@@ -31,7 +31,8 @@ export function Payments() {
   const navigate = useNavigate();
   const { states } = useAnalysis();
   const [comparison, setComparison] = useState<'raw' | 'adjusted'>('raw');
-  const relatedInsights = insightsByIds(['psp08-drop', 'retry-abandon', 'latency-p95']);
+  const allInsights = useLiveInsights();
+  const relatedInsights = allInsights.filter((i) => i.topic === 'psp' || i.topic === 'payment').slice(0, 3);
 
   return (
     <div>

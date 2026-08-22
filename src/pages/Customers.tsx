@@ -11,7 +11,7 @@ import { DataCoverageBadge } from '../components/analytics/Badges';
 import { CoverageNotice, InvestigationBar, PrototypeNotice } from '../components/analytics/Notices';
 import { InsufficientDataState } from '../components/analytics/States';
 import { useAnalysis } from '../contexts/AnalysisContext';
-import { insightsByTopic } from '../data/insights';
+import { useLiveInsights } from '../lib/useLiveInsights';
 import {
   cohortColumns,
   cohortSummary,
@@ -28,7 +28,7 @@ import { formatPercent } from '../utils/format';
 export function Customers() {
   const navigate = useNavigate();
   const { states } = useAnalysis();
-  const relatedInsights = insightsByTopic('customer');
+  const relatedInsights = useLiveInsights('customer');
 
   return (
     <div>

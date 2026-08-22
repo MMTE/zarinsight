@@ -12,6 +12,7 @@ import {
   fieldCoverage } from
 '../data/dataQuality';
 import { formatNumber, formatPercent, toPersianDigits } from '../utils/format';
+import { useEffect, useState } from 'react';
 
 const STATUS_LABEL = {
   ok: 'در دسترس',
@@ -26,6 +27,24 @@ const STATUS_VARIANT = {
 } as const;
 
 export function DataQuality() {
+  const [liveCounts, setLiveCounts] = useState<Record<string, string> | null>(null);
+
+  useEffect(() => {
+    fetch('/api/methodology').then((r) => r.json())
+      .then((d2) => setLiveCounts(d2.dataset.counts)).catch(() => {});
+  }, []);
+
+  const summary = liveCounts
+    ? {
+        records: Number(liveCounts.count_rows ?? 0),
+        sessions: Number(liveCounts.count_sessions ?? 0),
+        merchants: Number(liveCounts.count_merchants ?? 0),
+        psps: Number(liveCounts.count_psps ?? 0),
+        cards: Number(liveCounts.count_cards ?? 0),
+        quarantine: Number(liveCounts.count_quarantine ?? 0),
+      }
+    : datasetSummary;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -37,9 +56,9 @@ export function DataQuality() {
         <SectionHeading title="نگاه کلی به داده" />
         <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-          { label: 'تعداد رکوردها', value: formatNumber(datasetSummary.records) },
-          { label: 'تعداد کسب‌وکارها', value: formatNumber(datasetSummary.merchants) },
-          { label: 'بازه زمانی', value: datasetSummary.period },
+          { label: 'تعداد رکوردها', value: formatNumber(summary.records) },
+          { label: 'تعداد کسب‌وکارها', value: formatNumber(summary.merchants) },
+          { label: 'بازه زمانی', value: summary.period },
           { label: 'سطح داده', value: 'تلاش پرداخت' }].
           map((item) =>
           <div key={item.label} className="rounded-lg bg-gray-50 px-3 py-2.5">
@@ -48,7 +67,7 @@ export function DataQuality() {
             </div>
           )}
         </dl>
-        <p className="mt-3 text-[13px] leading-7 text-gray-900">{datasetSummary.grain}</p>
+        <p className="mt-3 text-[13px] leading-7 text-gray-900">{summary.grain}</p>
       </Card>
 
       <Card padding="md" elevation="low" className="border-border-light">

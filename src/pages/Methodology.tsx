@@ -1,15 +1,44 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '../components/Card';
 import { PageHeader, SectionHeading } from '../components/analytics/PageHeader';
 import { CautionNotice, PrototypeNotice } from '../components/analytics/Notices';
 import { adjustedFeeSection, methodSections, qualityGate } from '../data/methodology';
+
+interface LiveMethodology {
+  dataset: { id: string; provider: string; counts: Record<string, string> };
+  rules: Array<{ ruleId: string; fa: string; note: string }>;
+  caveats: string[];
+}
 import { formatNumber } from '../utils/format';
 
 export function Methodology() {
   const [view, setView] = useState<'simple' | 'technical'>('simple');
+  const [live, setLive] = useState<LiveMethodology | null>(null);
+
+  useEffect(() => {
+    fetch('/api/methodology').then((r) => r.json()).then(setLive).catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-6">
+      {live && (
+        <section aria-label="قواعد دادهٔ متصل" className="rounded-xl border border-border-light bg-white p-4">
+          <h2 className="text-[14px] font-bold text-gray-950">
+            مجموعه‌دادهٔ متصل: {live.dataset.id} ({live.dataset.provider})
+          </h2>
+          <ul className="mt-2 space-y-1 text-[13px] leading-7 text-gray-800">
+            {live.rules.map((rule) => (
+              <li key={rule.ruleId}>
+                <span className="font-bold">{rule.ruleId}</span> — {rule.fa}
+                <span className="text-gray-600"> ({rule.note})</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[12px] text-gray-600">
+            {Object.entries(live.dataset.counts).filter(([k]) => k.startsWith('count_')).map(([k, v]) => `${k.replace('count_', '')}=${Number(v).toLocaleString('fa-IR')}`).join(' · ')}
+          </p>
+        </section>
+      )}
       <PageHeader
         title="روش تحلیل"
         description="هر عددی که در این محصول می‌بینید، از یک تعریف مشخص و یک محاسبه ثابت می‌آید."

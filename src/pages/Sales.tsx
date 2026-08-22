@@ -9,7 +9,7 @@ import { BarCompareChart } from '../components/analytics/charts/BarCompareChart'
 import { WaterfallChart } from '../components/analytics/charts/WaterfallChart';
 import { CoverageNotice, InvestigationBar, PrototypeNotice } from '../components/analytics/Notices';
 import { useAnalysis } from '../contexts/AnalysisContext';
-import { insightsByTopic } from '../data/insights';
+import { useLiveInsights } from '../lib/useLiveInsights';
 import {
   anomalyNote,
   concentration,
@@ -32,7 +32,7 @@ export function Sales() {
 
   const active = concentration.find((item) => item.id === dimension) ?? concentration[0];
   const breakdownRows = breakdown === 'category' ? revenueByCategory : revenueByMerchant;
-  const relatedInsights = insightsByTopic('sales');
+  const relatedInsights = useLiveInsights('sales');
 
   return (
     <div>
