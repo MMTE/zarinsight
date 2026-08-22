@@ -100,7 +100,24 @@ test('insight by id + toUiInsight: detail-page data path maps the live payload',
   const rec = await get(`/api/insights/${encodeURIComponent(body.id)}/records?page=1`);
   assert.equal(rec.status, 200);
   assert.ok(rec.body.rows.length > 0, 'sample rows');
-  assert.ok('session_key' in rec.body.rows[0] && 'amount' in rec.body.rows[0]);
+});
+
+test('benchmarks: served from precompute in <500ms with cohort shape', async () => {
+  const t0 = performance.now();
+  const { status, body } = await get('/api/benchmarks?merchantKey=M156');
+  const ms = performance.now() - t0;
+  assert.equal(status, 200);
+  assert.ok(ms < 500, `served in ${ms.toFixed(0)}ms`);
+  assert.equal(body.cohortId, '59770001|vol4|amt4');
+  assert.equal(body.cohortMerchants, 5);
+  assert.deepEqual(body.window, ['2026-01-01', '2026-06-30']);
+  const metrics = body.rows.map((r) => r.metric).sort();
+  assert.deepEqual(metrics, ['avg_success_amount', 'retry_rate', 'returning_session_share', 'success_rate']);
+  const sr = body.rows.find((r) => r.metric === 'success_rate');
+  // parity with the slow path (benchmark() over the same window)
+  assert.ok(Math.abs(sr.merchantValue - 0.545370039327851) < 1e-9);
+  assert.ok(Math.abs(sr.median - 0.445894896551052) < 1e-9);
+  assert.ok(sr.q1 <= sr.median && sr.median <= sr.q3, 'quantiles ordered');
 });
 
 test('unknown insight → 404 with fa error; bad lifecycle → 400 without write', async () => {

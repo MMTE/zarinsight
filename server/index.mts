@@ -8,7 +8,8 @@ import { existsSync } from 'node:fs';
 import { Registry } from './registry.mjs';
 import { computeMetric, sessionMetrics, RULES } from '../src/lib/engine/metrics.ts';
 import { sessionWhere, sessionFrom } from '../src/lib/engine/segment.ts';
-import { benchmark } from '../src/lib/engine/cohorts.ts';
+import { readBenchmarks } from '../src/lib/engine/benchPrecompute.ts';
+
 
 const repoRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 
@@ -213,17 +214,29 @@ export function createApiApp() {
     ok(res, { dataset: ds.id, dim, series: rows });
   });
 
-  // ---- benchmarks ----
+  // ---- benchmarks (precomputed by detect.mjs → benchmark_cache; ADR-0007) ----
   app.get('/api/benchmarks', (req, res) => {
     const ds = registry.get(String(req.query.dataset)) ?? registry.active();
     const merchantKey = String(req.query.merchantKey ?? '');
-    const metric = String(req.query.metric ?? 'success_rate');
-    const range = (ds.db.prepare('SELECT MIN(date_id) a, MAX(date_id) b FROM fact_session')
-      .get() as { a: string; b: string });
-    const bench = benchmark(ds.db, merchantKey, metric as never,
-      { dateRange: [range.a, range.b] });
-    if (!bench) return fail(res, 404, 'گروه مشابه کافی برای مقایسه پیدا نشد');
-    ok(res, bench);
+    let rows;
+    try {
+      rows = readBenchmarks(ds.db, merchantKey);
+    } catch {
+      return fail(res, 404, 'کش بنچمارک برای این مجموعه‌داده ساخته نشده است (detect را اجرا کنید)');
+    }
+    if (!rows.length) return fail(res, 404, 'گروه مشابه کافی برای مقایسه پیدا نشد');
+    const any = rows[0];
+    ok(res, {
+      merchantKey,
+      cohortId: any.cohortId,
+      cohortMerchants: any.cohortMerchants,
+      window: [any.windowStart, any.windowEnd],
+      reference: 'cohort',
+      rows: rows.map((r) => ({
+        metric: r.metric, merchantValue: r.merchantValue,
+        median: r.median, q1: r.q1, q3: r.q3,
+      })),
+    });
   });
 
   // ---- methodology (the honesty page data) ----

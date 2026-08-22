@@ -27,6 +27,17 @@ and this project adheres to Semantic Versioning.
 - `scripts/smoke.mjs` now fails when I-14 < 15, I-18 < 15 or I-27 < 10;
   INSIGHT-CATALOG entries updated with the measured rationale.
 
+### Fixed — benchmarks page live + fast (half-mock → engine data)
+- `/api/benchmarks` now serves the precomputed `benchmark_cache` (built by
+  detect.mjs via a set-based pass over agg_daily/fact_session; 1,090 rows =
+  343 merchants × 4 metrics, ≥2-peer quality gate kept) — measured
+  8.6s → ~1ms. Peer-group card, all four metric rows (success rate, retry
+  rate, avg successful amount, returning share), strengths and gaps render
+  from live cohort quantiles; gap items deep-link to the merchant's published
+  I-07/I-08/I-11 insight with its real impact. Mock data remains only as the
+  API-unreachable fallback. Parity with the slow-path `benchmark()` locked by
+  a contract test (<500ms assertion).
+
 ### Added — agentic eve search & insights (ADR-0013, plan Task 10)
 - `src/lib/search/` — retrieval primitives ported from the liara deployment:
   Persian normalization/tokenization (ZWNJ, Arabic yeh/kaf, digit folding),

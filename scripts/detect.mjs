@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 // Run all P0 detectors over a built dataset, persisting per-detector (incremental,
-// idempotent per insight id). Usage: node scripts/detect.mjs [datasetDir]
+// idempotent per insight id). Also (re)builds benchmark_cache so /api/benchmarks
+// serves from a precomputed row (ADR-0007 cohorts, set-based pass).
+// Usage: node scripts/detect.mjs [datasetDir]
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 import { runDetectors } from '../src/lib/engine/detector.ts';
 import { P0_DETECTORS } from '../src/lib/engine/detectors.ts';
+import { precomputeBenchmarks } from '../src/lib/engine/benchPrecompute.ts';
 
 const repoRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const datasetDir = resolve(process.argv[2] ?? join(repoRoot, 'data/datasets/challenge-2026h1'));
@@ -37,6 +40,12 @@ for (let i = 0; i < P0_DETECTORS.length; i++) {
 }
 const total = Object.values(perDetector).reduce((a, b) => a + b, 0);
 console.log(`[detect] ${total} insights persisted from ${manifest.id}`);
+
+const benchT = Date.now();
+const benchRows = precomputeBenchmarks(db);
+console.log(`[detect] benchmark_cache: ${benchRows} rows (${
+  ((Date.now() - benchT) / 1000).toFixed(1)}s)`);
+
 if (missing.length) {
   console.error(`[detect] zero-insight detectors: ${missing.join(', ')}`);
 }

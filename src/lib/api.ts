@@ -26,6 +26,19 @@ export interface EngineInsight {
   rankScore: number;
 }
 
+export interface BenchRow {
+  metric: string; merchantValue: number; median: number; q1: number; q3: number;
+}
+
+export interface BenchResponse {
+  merchantKey: string;
+  cohortId: string;
+  cohortMerchants: number;
+  window: [string, string];
+  reference: 'cohort' | 'external_reference';
+  rows: BenchRow[];
+}
+
 export interface RecordsPage {
   total: number;
   page: number;
@@ -175,13 +188,15 @@ async function json<T>(url: string): Promise<T> {
   if (!res.ok) throw new Error(`${url} → ${res.status}`);
   return res.json() as Promise<T>;
 }
-
 export const api = {
+  insight: (id: string) => json<EngineInsight>(`/api/insights/${encodeURIComponent(id)}`),
+  benchmarks: (merchantKey: string) => json<BenchResponse>(
+    `/api/benchmarks?merchantKey=${encodeURIComponent(merchantKey)}`),
   datasets: () => json<{ active: string; datasets: Array<Record<string, unknown>> }>('/api/datasets'),
   merchants: () => json<{ dataset: string; merchants: MerchantRow[] }>('/api/merchants'),
   insights: (scope?: string, limit = 50) => json<EngineInsightsResponse>(
     `/api/insights?limit=${limit}${scope && scope !== 'portfolio' ? `&scope=${scope}` : ''}`),
-  insight: (id: string) => json<EngineInsight>(`/api/insights/${encodeURIComponent(id)}`),
+
   overview: (scope = 'portfolio') => json<OverviewResponse>(`/api/overview?scope=${scope}`),
   explore: (dim: string, scope = 'portfolio') => json<{ series: Array<Record<string, unknown>> }>(
     `/api/explore/metrics?dim=${dim}&scope=${scope}`),
