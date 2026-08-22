@@ -6,6 +6,8 @@ impact, exposes the evidence, and recommends the next action.
 
 **چه شد → چرا → چقدر پول → شواهد → چه کاری** — every insight.
 
+**Repository**: <https://github.com/MMTE/zarinsight>
+
 ## Quickstart (judges — under 2 minutes)
 
 ```bash
