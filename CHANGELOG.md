@@ -36,6 +36,12 @@ and this project adheres to Semantic Versioning.
   `message.appended{messageDelta}` fallback; per-line NDJSON parse no longer
   throws on truncated tails. Previously every live turn silently degraded to
   the deterministic FAQ fallback.
+- `npm run dev` never reached the agent: `eve start` bound its default port
+  (:3000) while vite proxies `/eve` to :2319, so the Ask page always showed
+  «عامل تحلیلگر در دسترس نیست» and answered from the FAQ fallback. New
+  `dev.sh` (liara pattern): build agent → start on :2319 → health-wait →
+  vite. `agent:start` now pins `--port 2319 --host 127.0.0.1`; quickstart
+  documents the optional provider key.
 
 ### Security
 - `.env` / `.env.*` gitignored — provider keys never enter the repo.

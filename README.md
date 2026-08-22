@@ -12,12 +12,14 @@ impact, exposes the evidence, and recommends the next action.
 git clone <repo> && cd zarinsight
 npm install
 npm run seed        # decompress the committed dataset (8 gzip parts, ~5s)
-npm run agent:build # build the eve analyst agent (optional, ~5s)
-npm run agent:start & npx vite   # or: npm run dev
+npm run dev         # dev.sh: build+start eve agent on :2319, health-wait, vite on :5173
 ```
 
 Open **http://localhost:5173** — app + API + agent on one origin.
-No CSV, no API keys, no DB server. `npm test` runs the full suite (25 tests).
+No CSV, no DB server. `npm test` runs the full suite (30 tests).
+For live agent replies set a provider key in `.env` (e.g. `CHAT_PROVIDER=avalai`
++ `AVALAI_API_KEY`, or `AI_GATEWAY_API_KEY`) — without one, `/ask` degrades to
+deterministic FAQ answers. Keys never enter the repo (`.env` gitignored).
 
 Bring your own data:
 - **Another CSV** with the challenge schema: `npm run data:build -- --csv path.csv --dataset-id mydata`
